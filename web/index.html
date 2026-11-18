@@ -232,17 +232,15 @@ input[type=number]{font-family:var(--f-num)}
 #calc .note{font-size:.8rem}
 .mexpr.mini{font-size:1rem;color:inherit;min-height:0;padding:0;overflow:visible;flex-wrap:wrap;white-space:normal;cursor:inherit;display:inline-flex;align-items:center}
 .list .mexpr.mini{display:inline-flex}
+
+.backbar{flex:0 0 auto;display:flex;align-items:center;gap:10px;padding:2px 0}
+.backbar b{flex:1;font-family:var(--f-head);font-size:1.25rem;font-weight:600;text-align:center}
+.backbtn{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:9px;padding:7px 12px;font:600 .88rem var(--f-ui);cursor:pointer}
 </style>
 </head>
 <body>
 
 <div class="app">
-  <nav aria-label="Calculator mode">
-    <a href="#calc" data-tab="calc">Scientific</a>
-    <a href="#units" data-tab="units">Units</a>
-    <a href="#feet" data-tab="feet">Feet-inches</a>
-    <a href="#site" data-tab="site">Site</a>
-  </nav>
 
   <!-- SCIENTIFIC -->
   <section id="calc">
@@ -268,6 +266,7 @@ input[type=number]{font-family:var(--f-num)}
 
   <!-- UNITS -->
   <section id="units" hidden>
+    <div class="backbar"><button class="backbtn" data-go="calc" aria-label="Back to the scientific calculator">‹ Calculator</button><b>Units</b><button class="backbtn" data-go="mode">MODE</button></div>
     <div class="panel">
       <label>Quantity <select id="uCat"></select></label>
       <label>Value <input type="number" id="uVal" value="10" step="any" inputmode="decimal"></label>
@@ -287,6 +286,7 @@ input[type=number]{font-family:var(--f-num)}
 
   <!-- FEET-INCHES -->
   <section id="feet" hidden>
+    <div class="backbar"><button class="backbtn" data-go="calc" aria-label="Back to the scientific calculator">‹ Calculator</button><b>Feet-inches</b><button class="backbtn" data-go="mode">MODE</button></div>
     <div class="lcd ftlcd">
       <div class="status"><span class="on" id="ftDim">LENGTH</span><span class="on" id="ftHint" style="opacity:.55"></span><span class="ang" id="ftRoundLbl">±1/16″</span></div>
       <div class="tape" id="tape"></div>
@@ -307,9 +307,9 @@ input[type=number]{font-family:var(--f-num)}
 
   <!-- SITE: engineering calculators -->
   <section id="site" hidden>
+    <div class="backbar"><button class="backbtn" data-go="calc" aria-label="Back to the scientific calculator">‹ Calculator</button><b>Site calculators</b><button class="backbtn" data-go="mode">MODE</button></div>
     <div class="panel">
-      <h2>Site calculators</h2>
-      <div class="seg" id="siteUnits" style="grid-template-columns:repeat(2,minmax(0,1fr))"><button data-u="imp">Feet-inches</button><button data-u="met">Metric</button></div>
+            <div class="seg" id="siteUnits" style="grid-template-columns:repeat(2,minmax(0,1fr))"><button data-u="imp">Feet-inches</button><button data-u="met">Metric</button></div>
       <div id="siteList"></div>
     </div>
   </section>
@@ -343,7 +343,7 @@ input[type=number]{font-family:var(--f-num)}
     <div class="chips" id="sciEx"></div>
     <h3>Top keys</h3>
     <dl class="guide">
-      <dt>MODE</dt><dd>Setup: COMP or CMPLX, angle unit, Fix/Sci decimals, fraction or decimal answers. Also opens EQN, MATRIX, VECTOR, STAT, DISTR and TABLE.</dd>
+      <dt>MODE</dt><dd>Setup: COMP or CMPLX, angle unit, Fix/Sci decimals, fraction or decimal answers. Also opens UNITS, FEET-INCHES, SITE, EQN, MATRIX, VECTOR, STAT, DISTR and TABLE.</dd>
       <dt>2nd</dt><dd>List of every function. Tap one to type it.</dd>
       <dt>▲ ▼ ◀ ▶</dt><dd>▲▼ step through past calculations, ◀▶ move the cursor</dd>
       <dt>CALC</dt><dd>Works out an expression for values you enter, e.g. 2X+Y. Also stores Y=2X+3 into Y.</dd>
@@ -970,7 +970,9 @@ function act(a){
     case 'recur':insertText('‾');return;
     case 'si':pick('SI prefixes',[['T','tera ×10¹²','ᴇ12'],['G','giga ×10⁹','ᴇ9'],['M','mega ×10⁶','ᴇ6'],['k','kilo ×10³','ᴇ3'],['m','milli ×10⁻³','ᴇ-3'],['μ','micro ×10⁻⁶','ᴇ-6'],['n','nano ×10⁻⁹','ᴇ-9'],['p','pico ×10⁻¹²','ᴇ-12'],['f','femto ×10⁻¹⁵','ᴇ-15']]);return;
     case 'const':openConst();return;
-    case 'conv':location.hash='units';return;
+    case 'conv':case 'units':location.hash='units';return;
+    case 'feet':location.hash='feet';return;
+    case 'site':location.hash='site';return;
     case 'vars':openVars();return;
     case 'sto':sto=true;toast('STO: now press a variable key (ALPHA letters A–F, X, Y, M, T)');return;
     case 'clrv':VARN.forEach(v=>vars[v]=0);saveVars();toast('Variables A–F, X, Y, M, T set to 0');return;
@@ -1104,7 +1106,8 @@ const segHTML=(key,opts,cur)=>`<div class="seg" style="grid-template-columns:rep
 function openMode(){
   const b=sheet('modeSheet','MODE and setup');
   b.innerHTML=`<h3>Calculation</h3>${segHTML('cmplx',[[0,'COMP · real numbers'],[1,'CMPLX · complex']],cfg.cmplx?1:0)}
-  <div class="opgrid">${[['eqn','EQN · equations'],['matrix','MATRIX'],['vector','VECTOR'],['stat','STAT'],['distr','DISTR'],['func','TABLE · f(x)']].map(([k,l])=>`<button class="op" data-act="${k}">${l}</button>`).join('')}</div>
+  <h3>Calculators</h3>
+  <div class="opgrid">${[['units','UNITS · conversion'],['feet','FEET-INCHES'],['site','SITE · engineering'],['eqn','EQN · equations'],['matrix','MATRIX'],['vector','VECTOR'],['stat','STAT'],['distr','DISTR'],['func','TABLE · f(x)']].map(([k,l])=>`<button class="op" data-act="${k}">${l}</button>`).join('')}</div>
   <h3>Angle unit</h3>${segHTML('ang',[['DEG','Degrees'],['RAD','Radians'],['GRA','Grads']],ang)}
   <h3>Number format</h3>${segHTML('disp',[['norm','Normal'],['fix','Fix decimals'],['sci','Sci notation']],cfg.disp)}
   ${cfg.disp!=='norm'?`<label>${cfg.disp==='fix'?'Decimal places':'Significant digits'} <select id="digSel">${(cfg.disp==='fix'?[0,1,2,3,4,5,6,7,8,9]:[1,2,3,4,5,6,7,8,9,10]).map(n=>`<option ${n===cfg.dig?'selected':''}>${n}</option>`).join('')}</select></label>`:''}
@@ -1700,6 +1703,7 @@ $('#siteList').addEventListener('click',e=>{const b=e.target.closest('[data-calc
 $('#siteUnits').addEventListener('click',e=>{const b=e.target.closest('[data-u]');if(!b)return;SITE.units=b.dataset.u;saveSite();paintSiteList()});
 paintSiteList();
 
+document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(!g)return;location.hash='calc';if(g.dataset.go==='mode')setTimeout(()=>{openMode();paint()},0)});
 /* ---------- boot ---------- */
 
 paint();units();ftPaint();showTab();
