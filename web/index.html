@@ -236,6 +236,20 @@ input[type=number]{font-family:var(--f-num)}
 .backbar{flex:0 0 auto;display:flex;align-items:center;gap:10px;padding:2px 0}
 .backbar b{flex:1;font-family:var(--f-head);font-size:1.25rem;font-weight:600;text-align:center}
 .backbtn{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:9px;padding:7px 12px;font:600 .88rem var(--f-ui);cursor:pointer}
+
+/* ---- feet-inches (Revit style) ---- */
+#feet .ftlcd{flex:1 1 auto;min-height:150px;display:flex;flex-direction:column;gap:4px;padding:8px 14px 10px}
+.ftprev{font:400 .9rem/1.3 var(--f-num);opacity:.6;text-align:right;min-height:1.2em;overflow-wrap:anywhere}
+.ftexpr{flex:1 1 0;min-height:2em;overflow-y:auto;font:500 1.6rem/1.35 var(--f-num);overflow-wrap:anywhere;word-break:break-word}
+.ftexpr .fop{opacity:.7;padding:0 .1em}
+.ftexpr .fnum{text-decoration:underline dotted;text-underline-offset:4px}
+.ftexpr .fbad{color:var(--lcd-err)}
+.ftprev .fop{padding:0 .15em}
+#feet .res{font-size:2rem;text-align:right;white-space:nowrap;overflow-x:auto;scrollbar-width:none;min-height:2.4rem}
+#feet .res.dim{font-size:1.35rem;opacity:.5}
+#feet .ftgrid{grid-template-rows:repeat(5,minmax(0,1fr));max-height:460px}
+#ftKeys .key.eq{grid-column:5;grid-row:4/6}
+#ftKeys .key.space{grid-column:1/5;grid-row:5;background:var(--k-fn);font-size:1.05rem;letter-spacing:.08em}
 </style>
 </head>
 <body>
@@ -288,18 +302,16 @@ input[type=number]{font-family:var(--f-num)}
   <section id="feet" hidden>
     <div class="backbar"><button class="backbtn" data-go="calc" aria-label="Back to the scientific calculator">‹ Calculator</button><b>Feet-inches</b><button class="backbtn" data-go="mode">MODE</button></div>
     <div class="lcd ftlcd">
-      <div class="status"><span class="on" id="ftDim">LENGTH</span><span class="on" id="ftHint" style="opacity:.55"></span><span class="ang" id="ftRoundLbl">±1/16″</span></div>
-      <div class="tape" id="tape"></div>
-      <div class="entry" id="entry"></div>
-      <input id="ftType" hidden autocomplete="off" spellcheck="false" inputmode="text" enterkeyhint="done" placeholder="Type like 65 2 3/8" aria-label="Type a length">
-      <div id="ftTotal" class="res" aria-live="polite"></div>
+      <div class="status"><span class="on" id="ftHint"></span><span class="ang" id="ftRoundLbl">±1/16″</span></div>
+      <div class="ftprev" id="ftPrevLine"></div>
+      <div class="ftexpr" id="ftExpr" aria-live="polite"></div>
+      <div id="ftTotal" class="res"></div>
       <div class="lines" id="ftOut"></div>
     </div>
     <div class="tools">
       <label>Round <select id="ftDen"><option value="2">1/2"</option><option value="4">1/4"</option><option value="8">1/8"</option><option value="16" selected>1/16"</option><option value="32">1/32"</option><option value="64">1/64"</option></select></label>
       <span class="sp"></span>
       <button class="linkbtn" id="ftHelp">How to use</button>
-      <button class="linkbtn" id="ftKbd">Type</button>
     </div>
     <div class="fracs" id="fracs"></div>
     <div class="ftgrid" id="ftKeys"></div>
@@ -401,19 +413,21 @@ input[type=number]{font-family:var(--f-num)}
 </div>
 <div class="sheet" id="ftHelpSheet" hidden>
   <div class="card" role="dialog" aria-label="How to use feet and inches">
-    <div class="card-head"><h2>How to use feet and inches</h2><button class="close" data-close>Done</button></div>
+    <div class="card-head"><h2>How to use feet-inches</h2><button class="close" data-close>Done</button></div>
+    <p class="hint">Type it like Revit: feet, space, inches, space, fraction. The ′ and ″ marks appear by themselves.</p>
     <dl class="guide">
-      <dt>65 ft 2 3/8</dt><dd>Press 6 5, ft, 2, then tap 3/8 in the fraction row</dd>
-      <dt>65 ft</dt><dd>Just press 6 5. A number on its own is feet.</dd>
-      <dt>7 1/2 in</dt><dd>Press 7, then tap 1/2. A number followed by a fraction is inches.</dd>
-      <dt>9 in</dt><dd>Press 9, in</dd>
-      <dt>1/16 fractions</dt><dd>Tap “16ths” at the end of the fraction row</dd>
-      <dt>+ − × ÷ =</dt><dd>Work like a site calculator, left to right. Every step stays on the tape above.</dd>
-      <dt>× 3, ÷ 4</dt><dd>After × or ÷ a plain number is a multiplier. Press ft or in after it to multiply two lengths (area) or three (volume).</dd>
-      <dt>20 ÷ 2 6</dt><dd>Length ÷ length tells you how many pieces fit (here 8)</dd>
-      <dt>⌫</dt><dd>Deletes the last digit. On an empty line it brings back the last entry to fix it.</dd>
-      <dt>Type</dt><dd>Use the phone keyboard, Revit style: 65 2 3/8 means 65 ft 2 3/8 in</dd>
+      <dt>65</dt><dd>65′ (feet)</dd>
+      <dt>65 2</dt><dd>65′ 2″</dd>
+      <dt>65 2 3/8</dt><dd>65′ 2 3/8″. Type 3/8 with the / key, or tap 3/8 in the fraction row.</dd>
+      <dt>65 0 3/8</dt><dd>65′ 3/8″</dd>
+      <dt>7 1/2 in</dt><dd>Inches only: press 7, tap 1/2, then press in</dd>
+      <dt>12 6 × 4</dt><dd>A plain number after × or ÷ multiplies or divides: 12′ 6″ × 4 = 50′</dd>
+      <dt>20 × 12 + space</dt><dd>Press space after the number to make it a length: 20′ × 12′ = 240 ft². Three lengths give cft.</dd>
+      <dt>20 ÷ 2 6</dt><dd>Length ÷ length tells you how many pieces fit (8)</dd>
+      <dt>= then + − × ÷</dt><dd>Keeps going from the answer</dd>
     </dl>
+    <h3>Examples</h3>
+    <div class="chips" id="ftEx"></div>
   </div>
 </div>
 <div class="toast" id="toast" hidden></div>
@@ -1526,110 +1540,129 @@ function ftin(inches,den){
   const inch=num?(whole?`${whole} ${num}/${d}`:`${num}/${d}`):`${whole}`;
   return {txt:`${neg&&tot?'−':''}${ft}' ${inch}"`,rounded:Math.abs(tot-Math.abs(inches))>1e-9};
 }
-const ftDenEl=$('#ftDen'),ftType=$('#ftType');
-const newEntry=()=>({f:'',i:'',fr:0,frT:'',stage:'f',ftM:false,inM:false,raw:null});
-let tape=[],pend=null,done=false,total=null,E=newEntry(),typing=false,sixteen=false,ftErr='';
-const den=()=>+ftDenEl.value;
-const numMode=()=>(pend==='×'||pend==='÷')&&!E.ftM&&!E.inM&&!E.fr&&!E.raw;
-const emptyE=()=>!E.raw&&!E.f&&!E.i&&!E.fr;
-function entryVal(){
-  if(E.raw)return E.raw;if(emptyE())return null;
-  if(numMode()){const n=parseFloat(E.f);if(isNaN(n))throw Error('Type a number');return{v:n,d:0}}
-  const f=parseFloat(E.f||'0'),i=parseFloat(E.i||'0');if(isNaN(f)||isNaN(i))throw Error('Check the number');
-  return{v:f*12+i+E.fr,d:1};
+/* ---- Revit-style entry: 65 = 65 ft · 65 2 = 65 ft 2 in · 65 2 3/8 = 65 ft 2 3/8 in ---- */
+const ftDenEl=$('#ftDen');
+let ftS='',ftDone=false,ftRes=null,ftErr='',ftPrevLine='',sixteen=false;
+const FT_OPS='+−×÷';
+const isOp=ch=>FT_OPS.includes(ch);
+function ftParts(s){const parts=[];let cur='';for(const ch of s){if(isOp(ch)){parts.push({t:'g',s:cur});parts.push({t:'o',s:ch});cur=''}else cur+=ch}parts.push({t:'g',s:cur});return parts}
+const isFracTok=t=>/^\d+\/\d*$/.test(t);
+/* What one group of numbers means. Returns {kind:'len',inches} | {kind:'num',v} | {kind:'empty'} */
+function ftGroup(g,prevOp,nextOp){
+  const tail=/\s$/.test(g);let raw=g.trim();if(!raw)return{kind:'empty',tail};
+  let inOnly=false;if(/in$/.test(raw)){inOnly=true;raw=raw.replace(/\s*in$/,'').trim()}
+  const toks=raw?raw.split(/\s+/):[];
+  const bad=toks.find(t=>!/^\d*\.?\d+$|^\d+\.$|^\d+\/\d*$/.test(t));if(bad)throw Error(`“${bad}” is not a number`);
+  const fv=t=>{const[a,b]=t.split('/');if(b===''||b===undefined)throw Error('Finish the fraction (for example 3/8)');if(+b===0)throw Error('A fraction cannot have 0 at the bottom');return a/b};
+  const nv=t=>isFracTok(t)?fv(t):parseFloat(t);
+  const nearMul=prevOp==='×'||prevOp==='÷';
+  if(nearMul&&toks.length===1&&!isFracTok(toks[0])&&!inOnly&&!tail)return{kind:'num',v:nv(toks[0]),toks,tail};
+  if(inOnly){if(toks.length>2)throw Error('For inches type like 7 1/2 in');return{kind:'len',inches:toks.reduce((s,t)=>s+nv(t),0),toks,inOnly,tail}}
+  if(toks.length>3)throw Error('Type feet, inches, then a fraction: 65 2 3/8');
+  if(toks.length===1)return isFracTok(toks[0])?{kind:'len',inches:fv(toks[0]),toks,tail}:{kind:'len',inches:nv(toks[0])*12,toks,tail};
+  if(toks.length===2){if(isFracTok(toks[0]))throw Error('Put the fraction last: 65 2 3/8');return{kind:'len',inches:nv(toks[0])*12+nv(toks[1]),toks,tail}}
+  if(isFracTok(toks[0])||isFracTok(toks[1]))throw Error('Put the fraction last: 65 2 3/8');
+  if(!isFracTok(toks[2]))throw Error('The third number is the fraction of an inch, like 3/8');
+  return{kind:'len',inches:nv(toks[0])*12+nv(toks[1])+fv(toks[2]),toks,tail};
 }
-function showV(x){if(x.d===1)return ftin(x.v,den()).txt;if(x.d===0)return fmt(x.v);if(x.d===2)return fmt(x.v/144)+' ft²';if(x.d===3)return fmt(x.v/1728)+' ft³';return fmt(x.v)+' in^'+x.d}
-function applyOp(op,a,b){
-  if(op==='+'||op==='−'){if(a.d!==b.d)throw Error(a.d===0||b.d===0?'Cannot add a plain number to a length. Press ft or in after the number.':'Cannot add a length to an area');return{v:a.v+(op==='+'?b.v:-b.v),d:a.d}}
-  if(op==='×')return{v:a.v*b.v,d:a.d+b.d};
-  if(b.v===0)throw Error('Cannot divide by zero');const d=a.d-b.d;if(d<0)throw Error('Cannot divide a number by a length');return{v:a.v/b.v,d};
+function ftAnalyse(s){const parts=ftParts(s);
+  return parts.map((p,i)=>p.t==='o'?p:Object.assign(p,{info:(()=>{try{return ftGroup(p.s,parts[i-1]&&parts[i-1].s,parts[i+1]&&parts[i+1].s)}catch(e){return{kind:'err',msg:e.message}}})()}))}
+/* pretty display: 65 2 3/8 → 65′ 2 3/8″ */
+function ftShow(parts){
+  return parts.map(p=>{
+    if(p.t==='o')return `<span class="fop">${p.s}</span>`;
+    const g=p.info;if(g.kind==='empty')return '';
+    if(g.kind==='err')return `<span class="fbad">${esc(p.s.trim())}</span>`;
+    if(g.kind==='num')return `<span class="fnum">${esc(g.toks[0])}</span>`;
+    const t=g.toks,P=(x)=>`<span class="fpt">${esc(x)}</span>`;
+    if(g.inOnly)return P(t.join(' ')+'″');
+    if(t.length===1)return isFracTok(t[0])?P(t[0]+'″'):P(t[0]+'′');
+    return P(t[0]+'′')+' '+P(t.slice(1).join(' ')+'″');
+  }).join(' ')}
+function ftHint(parts){
+  const last=parts[parts.length-1];
+  if(!ftS)return 'type feet · space · inches · space · fraction';
+  if(last.t==='o')return 'type the next length';
+  const g=last.info,prev=parts[parts.length-2];
+  if(g.kind==='err')return g.msg;
+  if(g.kind==='empty')return 'type the next length';
+  if(g.kind==='num')return prev&&(prev.s==='×'||prev.s==='÷')?'number to multiply or divide by · space makes it a length':'type the next length';
+  const n=g.toks.length,lt=g.toks[n-1];
+  if(g.inOnly)return 'inches';
+  if(/\/$/.test(lt))return 'type the bottom of the fraction';
+  if(!g.tail)return n===1?(isFracTok(lt)?'fraction of an inch':'feet · space for inches'):n===2?'inches · space or tap a fraction':'fraction of an inch';
+  return n===1?'now type inches':n===2?'now a fraction (tap one below or type 3/8)':'press + − × ÷ or =';
 }
-const totalOf=l=>{let t=null;for(const it of l)t=t?applyOp(it.op,t,it.val):it.val;return t};
-function ftReset(){tape=[];pend=null;done=false;total=null;E=newEntry();ftErr=''}
-function takeTyped(){if(!typing||!ftType.value.trim())return true;try{const v=ftEval(ftType.value);E=newEntry();E.raw=v;ftType.value='';return true}catch(e){ftErr=e.message||'Check what you typed';return false}}
-function ftKey(k){
-  ftErr='';
-  if(/^[0-9.]$/.test(k)){if(done)ftReset();if(E.raw)E=newEntry();const fl=E.stage==='f'?'f':'i';if(k==='.'&&E[fl].includes('.'))return;if(E[fl].length>=8)return;E[fl]+=k;return}
-  if(k.startsWith('fr:')){if(done)ftReset();if(E.raw)E=newEntry();const [n,d]=k.slice(3).split('/');if(E.stage==='f'&&!E.ftM){E.i=E.f;E.f=''}E.fr=n/d;E.frT=n+'/'+d;E.inM=true;E.stage='i';return}
-  switch(k){
-    case 'ft':if(done)return;if(E.raw)return;if(E.stage==='f'){if(!E.f)E.f='0';E.ftM=true;E.stage='i'}return;
-    case 'in':if(done)return;if(E.raw)return;if(E.stage==='f'&&!E.ftM){E.i=E.f;E.f=''}E.inM=true;E.stage='i';return;
-    case 'bs':
-      if(done){done=false;const last=tape.pop();if(last){E=newEntry();E.raw=last.val;pend=tape.length?last.op:null}return}
-      if(E.raw){E=newEntry();return}
-      if(E.fr){E.fr=0;E.frT='';if(!E.i&&!E.ftM){E.inM=false;E.stage='f'}return}
-      if(E.stage==='i'){if(E.i){E.i=E.i.slice(0,-1);return}if(E.inM&&!E.ftM){E.inM=false;E.stage='f';return}E.stage='f';E.ftM=false;E.inM=false;return}
-      if(E.f){E.f=E.f.slice(0,-1);return}
-      if(tape.length){const last=tape.pop();E=newEntry();E.raw=last.val;pend=tape.length?last.op:null}return;
-    case 'ac':ftReset();return;
-    case '=':
-      if(!takeTyped())return;
-      try{if(!emptyE())tape.push({op:tape.length?pend:null,val:entryVal()});if(!tape.length)return;total=totalOf(tape);done=true;pend=null;E=newEntry()}catch(e){ftErr=e.message}
-      return;
-    default:{ // operators
-      if(!takeTyped())return;
-      if(done){if(total==null)return;tape=[{op:null,val:total}];done=false;total=null;E=newEntry();pend=k;return}
-      if(emptyE()){if(tape.length)pend=k;return}
-      try{tape.push({op:tape.length?pend:null,val:entryVal()});pend=k;E=newEntry()}catch(e){ftErr=e.message}
-    }
-  }
+function ftCalc(parts){
+  if(parts.some(p=>p.t==='g'&&p.info.kind==='err'))throw Error(parts.find(p=>p.t==='g'&&p.info.kind==='err').info.msg);
+  let ex='';parts.forEach((p,i)=>{if(p.t==='o')ex+=({'+':'+','−':'-','×':'*','÷':'÷'})[p.s];else{const g=p.info;
+    if(g.kind==='len')ex+=`(${g.inches})in`;else if(g.kind==='num')ex+=`(${g.v})`;else if(i===0&&parts[1]&&parts[1].s==='−')ex+='';else throw Error('Type a number after the sign')}});
+  return ftEval(ex);
+}
+function ftResultParts(r,den){
+  const L=(a,b)=>`<div><span>${a}</span><span>${b}</span></div>`;
+  if(r.d===0)return{big:fmt(nice(r.v)),dim:'NUMBER',lines:L('pieces / times',fmt(nice(r.v)))};
+  if(r.d===1){const f=ftin(r.v,den);return{big:f.txt.replace(/'/,'′').replace(/"$/,'″'),dim:'LENGTH',lines:L('ft',fmt(r.v/12))+L('in',fmt(r.v))+L('m',fmt(r.v*.0254))+L('mm',fmt(r.v*25.4))}}
+  if(r.d===2)return{big:fmt(r.v/144)+' ft²',dim:'AREA',lines:L('m²',fmt(r.v*.00064516))+L('yd²',fmt(r.v/1296))+L('in²',fmt(r.v))+L('marla',fmt(r.v/144/272.25))};
+  if(r.d===3)return{big:fmt(r.v/1728)+' cft',dim:'VOLUME',lines:L('m³',fmt(r.v*1.6387064e-5))+L('yd³',fmt(r.v/46656))+L('litre',fmt(r.v*.016387064))+L('in³',fmt(r.v))};
+  return{big:fmt(r.v)+' in^'+r.d,dim:'',lines:''};
 }
 function ftPaint(){
-  $('#ftRoundLbl').textContent='±1/'+den()+'″';
-  const line=(op,t,cls='')=>`<div class="tl ${cls}"><b>${op||''}</b><span>${t}</span></div>`;
-  let tl=tape.map(it=>line(it.op,showV(it.val))).join('');
-  if(done&&total)tl+=line('=',showV(total),'tot');
-  const tp=$('#tape');tp.innerHTML=tl;tp.scrollTop=tp.scrollHeight;
-  // entry
-  const en=$('#entry');let hint='';
-  if(done){en.innerHTML='';hint='new number, or + − × ÷ to go on'}
-  else{
-    const op=tape.length?(pend||''):'';let body;
-    if(E.raw)body=`<span class="pt act">${showV(E.raw)}</span>`;
-    else if(numMode()){body=`<span class="pt act">${E.f||'0'}</span>`;hint='number · ft or in makes it a length'}
-    else{
-      const showIn=E.stage==='i'||E.inM||E.fr;
-      const fpart=(E.ftM||E.f||!showIn)?`<span class="pt ${E.stage==='f'?'act':''} ${!E.f&&!E.ftM?'dimpt':''}">${E.f||'0'}'</span>`:'';
-      const ipart=showIn?`<span class="pt ${E.stage==='i'?'act':''}">${E.i||(E.fr?'':'0')}${E.fr?(E.i?' ':'')+E.frT:''}"</span>`:'';
-      body=fpart+ipart;
-      hint=E.stage==='f'?'feet · press ft for inches':'inches · tap a fraction';
-    }
-    en.innerHTML=`<span class="op">${op}</span><span style="display:flex;gap:10px;flex-wrap:wrap">${body}</span>`;
-  }
-  en.hidden=typing&&!done;ftType.hidden=!typing||done;
-  if(typing&&!done)hint='Revit style 65 2 3/8';
-  $('#ftHint').textContent=hint;
-  // total / conversions
-  const tot=$('#ftTotal'),out=$('#ftOut');let cur=null;
+  const den=+ftDenEl.value;$('#ftRoundLbl').textContent='±1/'+den+'″';
+  const parts=ftAnalyse(ftS);
+  $('#ftPrevLine').innerHTML=ftDone?'':ftPrevLine;
+  $('#ftExpr').innerHTML=ftS?ftShow(parts)+(ftDone?'':'<span class="caret"></span>'):'<span class="caret"></span>';
+  $('#ftHint').textContent=ftDone?'press a number to start again, or + − × ÷ to go on':ftHint(parts);
+  const tot=$('#ftTotal'),out=$('#ftOut');
   if(ftErr){tot.className='res err';tot.textContent=ftErr;out.innerHTML='';return}
-  try{cur=done?total:(()=>{const l=tape.slice();const v=entryVal();if(v)l.push({op:l.length?pend:null,val:v});return l.length?totalOf(l):null})()}catch(e){tot.className='res err';tot.textContent=e.message;out.innerHTML='';return}
-  if(!cur){tot.className='res dim';tot.textContent='';out.innerHTML='';$('#ftDim').textContent='LENGTH';return}
-  tot.className=done?'res':'res dim';tot.textContent=(done?'':'= ')+showV(cur);
-  const L=(a,b)=>`<div><span>${a}</span><span>${b}</span></div>`;let lines='',dim='';
-  if(cur.d===0){dim='NUMBER';lines=L('pieces / ratio',fmt(cur.v))}
-  else if(cur.d===1){dim='LENGTH';lines=L('ft',fmt(cur.v/12))+L('in',fmt(cur.v))+L('m',fmt(cur.v*.0254))+L('mm',fmt(cur.v*25.4))}
-  else if(cur.d===2){dim='AREA';lines=L('m²',fmt(cur.v*.00064516))+L('yd²',fmt(cur.v/1296))+L('in²',fmt(cur.v))+L('marla',fmt(cur.v/144/272.25))}
-  else if(cur.d===3){dim='VOLUME';lines=L('m³',fmt(cur.v*1.6387064e-5))+L('yd³',fmt(cur.v/46656))+L('litre',fmt(cur.v*.016387064))+L('in³',fmt(cur.v))}
-  $('#ftDim').textContent=dim;out.innerHTML=lines;
+  let r=null;try{if(ftS.trim()&&!isOp(ftS.trim().slice(-1)))r=ftCalc(parts)}catch(e){r=null}
+  if(!r){tot.className='res dim';tot.textContent='';out.innerHTML='';return}
+  const o=ftResultParts(r,den);tot.className=ftDone?'res':'res dim';tot.textContent=(ftDone?'= ':'')+o.big;out.innerHTML=o.lines;
+  const ex=$('#ftExpr');ex.scrollTop=ex.scrollHeight;
+}
+function ftKey(k){
+  ftErr='';
+  if(ftDone){
+    if(isOp(k)){if(ftRes&&ftRes.d===1){ftS=revit(ftRes.v,+ftDenEl.value)+k}else{ftS=''}ftDone=false;return}
+    if(k==='bs'){ftDone=false;return}
+    ftS='';ftDone=false;if(k==='='||k===' ')return;
+  }
+  const last=ftS.slice(-1);
+  if(/^[0-9.]$/.test(k)){if(k==='.'&&/[0-9.]*\.[0-9]*$/.test(ftS.split(/[\s+−×÷/]/).pop()+''))return;ftS+=k;return}
+  if(k===' '){if(!ftS||last===' '||isOp(last)||last==='/')return;if(/in$/.test(ftS))return;ftS+=' ';return}
+  if(k==='/'){if(!/\d$/.test(ftS))return;if(/\/\d*$/.test(ftS.split(/[\s+−×÷]/).pop()))return;ftS+='/';return}
+  if(k==='in'){if(!/[\d]$/.test(ftS))return;ftS+=' in';return}
+  if(k.startsWith('fr:')){const f=k.slice(3);if(/\/\d*$/.test(ftS))return;ftS+=(/\d$/.test(ftS)?' ':'')+f;return}
+  if(isOp(k)){if(!ftS.trim()){ftS='';if(k==='−')ftS='−';return}if(isOp(ftS.slice(-1)))ftS=ftS.slice(0,-1);ftS+=k;return}
+  if(k==='bs'){if(/ in$/.test(ftS)){ftS=ftS.slice(0,-3);return}ftS=ftS.slice(0,-1);return}
+  if(k==='ac'){ftS='';ftPrevLine='';return}
+  if(k==='='){if(!ftS.trim())return;
+    try{const parts=ftAnalyse(ftS);const r=ftCalc(parts);ftRes=r;ftDone=true;
+      ftPrevLine=`${ftShow(parts)} <span class="fop">=</span> ${esc(ftResultParts(r,+ftDenEl.value).big)}`}
+    catch(e){ftErr=e.message}return}
 }
 function paintFracs(){
   const d=sixteen?16:8,list=[];for(let n=1;n<d;n++){if(sixteen&&n%2===0)continue;const g=gcd2(n,d);list.push((n/g)+'/'+(d/g))}
   $('#fracs').style.gridTemplateColumns=`repeat(${list.length+1},minmax(0,1fr))`;
   $('#fracs').innerHTML=list.map(f=>`<button data-k="fr:${f}">${f}</button>`).join('')+`<button class="tog" data-k="tog">${sixteen?'8ths':'16ths'}</button>`;
 }
-const FTK=[['7'],['8'],['9'],['⌫','bs','del'],['AC','ac','del'],['4'],['5'],['6'],['×','×','op'],['÷','÷','op'],['1'],['2'],['3'],['+','+','op'],['−','−','op'],['0'],['.'],['ft','ft','fn'],['in','in','fn'],['=','=','eq']];
-$('#ftKeys').innerHTML=FTK.map(([l,k,c])=>`<button class="key ${c||''}" data-k="${k||l}">${l}</button>`).join('');
+const FTK=[['7'],['8'],['9'],['⌫','bs','del'],['AC','ac','del'],['4'],['5'],['6'],['×','×','op'],['÷','÷','op'],['1'],['2'],['3'],['+','+','op'],['−','−','op'],['0'],['.'],['/','/','fn','fraction bar'],['in','in','fn','inches only'],['=','=','eq'],['space',' ','space']];
+$('#ftKeys').innerHTML=FTK.map(([l,k,c,ar])=>`<button class="key ${c||''}" data-k="${k||l}"${ar?` aria-label="${ar}"`:''}>${l}</button>`).join('');
 function ftClick(e){const b=e.target.closest('button[data-k]');if(!b)return;const k=b.dataset.k;
   if(k==='tog'){sixteen=!sixteen;paintFracs();return}
   ftKey(k);ftPaint()}
 $('#ftKeys').addEventListener('click',ftClick);$('#fracs').addEventListener('click',ftClick);
-ftDenEl.addEventListener('change',ftPaint);
-$('#ftKbd').onclick=()=>{typing=!typing;$('#ftKbd').textContent=typing?'Keypad':'Type';if(done)ftReset();ftPaint();if(typing)ftType.focus()};
-ftType.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();ftKey('=');ftPaint()}else if('+-*/'.includes(e.key)&&ftType.value.trim()){e.preventDefault();ftKey({'+':'+','-':'−','*':'×','/':'÷'}[e.key]);ftPaint()}});
-ftType.addEventListener('input',()=>{ftErr='';ftPaint()});
+ftDenEl.addEventListener('change',()=>{if(ftDone&&ftRes){const parts=ftAnalyse(ftS);ftPrevLine=`${ftShow(parts)} <span class="fop">=</span> ${esc(ftResultParts(ftRes,+ftDenEl.value).big)}`}ftPaint()});
 $('#ftHelp').onclick=()=>{$('#ftHelpSheet').hidden=false};
-// sample on the tape
-['6','5','ft','2','fr:3/8','+','1','0','ft','6','fr:1/4'].forEach(ftKey);
+document.addEventListener('keydown',e=>{
+  if($('#feet').hidden||e.ctrlKey||e.metaKey||e.altKey)return;
+  const ae=document.activeElement;if(ae&&/^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName))return;
+  if([...document.querySelectorAll('.sheet')].some(s=>!s.hidden))return;
+  const m={'+':'+','-':'−','*':'×','x':'×','Enter':'=','=':'=','Backspace':'bs','Escape':'ac','Delete':'ac',' ':' ','/':'/','i':'in'};
+  const k=/^[0-9.]$/.test(e.key)?e.key:m[e.key];if(!k)return;e.preventDefault();ftKey(k);ftPaint()});
+const EX=['65 2 3/8 + 10 6 1/4','24 6 − 9 10 5/8','12 6 × 4','24 6 ÷ 3','20 ÷ 2 6','20 × 12 ','30 × 20 × 0 4','7 1/2 in + 3 3/4 in'];
+$('#ftEx').innerHTML=EX.map(x=>`<button data-ex="${esc(x)}">${esc(x.trim())}</button>`).join('');
+$('#ftEx').addEventListener('click',e=>{const b=e.target.closest('[data-ex]');if(!b)return;ftDone=false;ftErr='';ftS=b.dataset.ex;ftKey('=');$('#ftHelpSheet').hidden=true;ftPaint()});
 paintFracs();
 
 /* ================= SITE: engineering calculators =================
