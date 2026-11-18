@@ -196,6 +196,36 @@ input[type=number]{font-family:var(--f-num)}
 .ttbl th{color:var(--muted);font-weight:600;position:sticky;top:0;background:var(--soft)}
 .tscroll{max-height:42vh;overflow:auto}
 .chips button{font-size:.82rem}
+
+/* ---- natural (textbook) display ---- */
+#calc .lcd{flex:1 1 auto;min-height:170px;padding:8px 14px 10px;gap:4px}
+#calc .keypad{flex:0 1 600px;max-height:none}
+.mexpr{font:400 1.6rem/1.2 var(--f-num);color:var(--lcd-ink);min-height:2.2em;overflow-x:auto;overflow-y:hidden;white-space:nowrap;display:flex;align-items:center;padding:6px 2px;scrollbar-width:none;cursor:text;outline:none}
+.mexpr::-webkit-scrollbar{display:none}
+.mexpr .tk{padding:0 .015em;flex:none}
+.mexpr .mw{display:inline-flex;align-items:center;margin-right:.08em}
+.fr{display:inline-flex;flex-direction:column;align-items:stretch;margin:0 .14em;flex:none}
+.fr>.fn{border-bottom:2px solid currentColor;padding:0 .18em .06em;display:flex;align-items:center;justify-content:center}
+.fr>.fd{padding:.08em .18em 0;display:flex;align-items:center;justify-content:center}
+.sq{display:inline-flex;align-items:stretch;margin:0 .06em;flex:none}
+.sq .rad{width:.62em;flex:none;fill:none;stroke:currentColor;stroke-width:2;overflow:visible}
+.sq .sqb{border-top:2px solid currentColor;padding:.1em .12em 0 .06em;display:inline-flex;align-items:center}
+.sq .ri{font-size:.58em;align-self:flex-start;margin-right:-.4em;display:inline-flex;align-items:center;position:relative;z-index:1}
+.sup{font-size:.66em;display:inline-flex;align-items:center;margin-left:.04em;flex:none;position:relative;top:-.62em}
+.sub{font-size:.66em;display:inline-flex;align-items:center;flex:none;position:relative;top:.45em}
+.abs{display:inline-flex;align-items:center;border-left:2px solid currentColor;border-right:2px solid currentColor;padding:0 .14em;margin:0 .1em;flex:none}
+.box{display:inline-flex;align-items:center;justify-content:center;min-width:.62em;min-height:.95em;border:1.5px dashed currentColor;border-radius:2px;margin:0 .04em;flex:none;opacity:.6}
+.caret{display:inline-block;width:2px;height:1.1em;background:#6a4fe0;margin:0 -1px;animation:blink 1.05s steps(1) infinite;align-self:center;flex:none}
+@keyframes blink{50%{opacity:0}}
+@media (prefers-reduced-motion:reduce){.caret{animation:none}}
+.mexpr.done{opacity:.9}
+#calc .res{margin-top:auto;font-size:2.3rem;line-height:1.15;display:block;text-align:right;white-space:nowrap;min-height:2.8rem;overflow:hidden}
+#calc .res .fr{display:inline-flex;vertical-align:middle}
+#calc .res.dim{font-size:1.4rem;opacity:.45;line-height:1.2}
+#calc .res .fr{font-size:.85em}
+#calc .note{font-size:.8rem}
+.mexpr.mini{font-size:1rem;color:inherit;min-height:0;padding:0;overflow:visible;flex-wrap:wrap;white-space:normal;cursor:inherit}
+.list .mexpr.mini{display:inline-flex}
 </style>
 </head>
 <body>
@@ -211,7 +241,7 @@ input[type=number]{font-family:var(--f-num)}
   <section id="calc">
     <div class="lcd">
       <div class="status"><span id="stS">S</span><span id="stA">A</span><span id="stH">hyp</span><span id="stSto">STO</span><span id="stM">M</span><span id="stMode" class="mode"></span><button class="angbtn" id="stAng" aria-label="Change angle unit">DEG</button></div>
-      <input id="expr" inputmode="none" autocomplete="off" spellcheck="false" aria-label="Expression" value="√(3²+4²)">
+      <div id="expr" class="mexpr" role="textbox" aria-label="Expression" tabindex="0"></div>
       <div id="res" class="res" aria-live="polite"></div>
       <div id="note" class="note"></div>
     </div>
@@ -469,6 +499,7 @@ function tokenize(s){
       if(nx==='ᴇ')throw Error('Put a whole number after Exp');
       if(nx==='‾')throw Error('The recurring bar goes after the decimal point, e.g. 0.1‾6 for 0.1666…');
       t.push({k:'n',v:parseFloat(m[1]+(m[2]?'e'+m[2]:''))});i+=m[0].length;continue}
+    if(c==='□')throw Error('Fill in the empty box first');
     if(c==='‾')throw Error('Type the recurring bar after a decimal number, e.g. 0.‾3 for 0.333…');
     if(c==='ᴇ'){const m=rest.match(/^ᴇ([+-]?\d+)/);if(!m)throw Error('Put a whole number after Exp');t.push({k:'n',v:Math.pow(10,+m[1])});i+=m[0].length;continue}
     if(c==='¦'){t.push({k:'divr'});i++;continue}
@@ -650,7 +681,9 @@ function fmtMain(x){
   if(typeof x!=='number'||!isFinite(x))return fmtD(x);
   if(cfg.disp==='fix'){if(Math.abs(x)>=1e15)return sciStr(x,10);return x.toLocaleString('en-US',{minimumFractionDigits:cfg.dig,maximumFractionDigits:cfg.dig}).replace('-','−')}
   if(cfg.disp==='sci')return sciStr(x,cfg.dig);
-  return fmtD(x).replace(/^-/,'−');
+  if(x===0)return '0';const a=Math.abs(x);
+  if(a>=1e15||a<1e-6)return sciStr(+x.toPrecision(13),13).replace(/\.?0+×/,'×');
+  return String(parseFloat(x.toPrecision(15))).replace('-','−');
 }
 function cxStr(v,polar=cfg.polar){if(!isC(v))return fmtMain(v);
   if(polar)return `${fmtMain(r10(cabs(v)))}∠${fmtMain(r10(fromR(carg(v))))}${ang==='DEG'?'°':ang==='GRA'?'ᵍ':''}`;
@@ -728,20 +761,120 @@ const cellHTML=d=>{const i=ALLK.push(d)-1,s=d.s?d.s[0]:'',a=d.a?d.a[0]:'';
 $('#fgrid').insertAdjacentHTML('beforeend',UP.map(cellHTML).join(''));
 $('#ngrid').innerHTML=NP.map(cellHTML).join('');
 
-const ex=$('#expr');
+/* ---------- natural display: Casio-style templates (fractions, roots, powers) ---------- */
+const TPL={frac:['a','b'],mixed:['w','a','b'],sqrt:['a'],root:['n','a'],pow:['a'],abs:['a'],logb:['n','a']};
+const ED={root:[],cur:null};ED.cur={l:ED.root,i:0};
+const C_=v=>({t:'c',v});
+const mkT=(t,init)=>{const n={t};TPL[t].forEach(s=>n[s]=[]);return Object.assign(n,init||{})};
+const edEmpty=n=>TPL[n.t].every(s=>!n[s].length);
+function owner(list){
+  const walk=L=>{for(let i=0;i<L.length;i++){const n=L[i];if(n.t==='c')continue;for(const s of TPL[n.t]){if(n[s]===list)return{node:n,slot:s,plist:L,pi:i};const r=walk(n[s]);if(r)return r}}return null};
+  return walk(ED.root)}
+function edClear(){ED.root=[];ED.cur={l:ED.root,i:0}}
+const edIsEmpty=()=>!ED.root.length;
+const edClone=L=>JSON.parse(JSON.stringify(L));
+function edLoad(tree){ED.root=edClone(tree);ED.cur={l:ED.root,i:ED.root.length}}
+function edRight(){const{l,i}=ED.cur;
+  if(i<l.length){const n=l[i];if(n.t!=='c')ED.cur={l:n[TPL[n.t][0]],i:0};else ED.cur.i++;return true}
+  const o=owner(l);if(!o)return false;const sl=TPL[o.node.t],k=sl.indexOf(o.slot);
+  ED.cur=k<sl.length-1?{l:o.node[sl[k+1]],i:0}:{l:o.plist,i:o.pi+1};return true}
+function edLeft(){const{l,i}=ED.cur;
+  if(i>0){const n=l[i-1];if(n.t!=='c'){const s=TPL[n.t],L=n[s[s.length-1]];ED.cur={l:L,i:L.length}}else ED.cur.i--;return true}
+  const o=owner(l);if(!o)return false;const sl=TPL[o.node.t],k=sl.indexOf(o.slot);
+  if(k>0){const L=o.node[sl[k-1]];ED.cur={l:L,i:L.length}}else ED.cur={l:o.plist,i:o.pi};return true}
+function edVert(dir){let l=ED.cur.l;
+  for(;;){const o=owner(l);if(!o)return false;
+    if(o.node.t==='frac'||o.node.t==='mixed'){
+      if(dir<0&&o.slot==='b'){const L=o.node.a;ED.cur={l:L,i:Math.min(ED.cur.i,L.length)};return true}
+      if(dir>0&&o.slot!=='b'){const L=o.node.b;ED.cur={l:L,i:Math.min(ED.cur.i,L.length)};return true}}
+    l=o.plist}}
+function edPut(n,enter){const{l,i}=ED.cur;l.splice(i,0,n);if(enter&&n.t!=='c')ED.cur={l:n[TPL[n.t][0]],i:0};else ED.cur.i=i+1}
+function edDel(){const{l,i}=ED.cur;
+  if(i>0){const n=l[i-1];
+    if(n.t==='c'||edEmpty(n)||(n.t==='pow'&&n.a.length<=2&&n.a.every(x=>x.t==='c'))){l.splice(i-1,1);ED.cur.i--;return}
+    const s=TPL[n.t],L=n[s[s.length-1]];ED.cur={l:L,i:L.length};if(L.length)edDel();return}
+  const o=owner(l);if(!o)return;
+  if(edEmpty(o.node)){o.plist.splice(o.pi,1);ED.cur={l:o.plist,i:o.pi};return}
+  edLeft()}
+/* typed text → nodes (for history, examples, constants and paste) */
+const ATOMS=['sinh⁻¹(','cosh⁻¹(','tanh⁻¹(','sin⁻¹(','cos⁻¹(','tan⁻¹(','cot⁻¹(','sinh(','cosh(','tanh(','sin(','cos(','tan(','cot(','sec(','csc(','log(','ln(','Abs(','Int(','Ceil(','Floor(','mod(','GCD(','LCM(','nPr(','nCr(','Pol(','Rec(','RanInt(','Ran#','PreAns','Ans','Arg(','Conj(','Real(','Imag(','∫(','d/dx(','Σ(','Π(','lim(','÷R','logₓ(','ˣ√(','ʸ√(','√(','∛('];
+function parseText(s){const out=[];let i=0;
+  while(i<s.length){const r=s.slice(i);let m;
+    if((m=r.match(/^(\d+) (\d+)⁄(\d+)/))){out.push(mkT('mixed',{w:[...m[1]].map(C_),a:[...m[2]].map(C_),b:[...m[3]].map(C_)}));i+=m[0].length;continue}
+    if((m=r.match(/^(\d+\.?\d*)⁄(\d+\.?\d*)/))){out.push(mkT('frac',{a:[...m[1]].map(C_),b:[...m[2]].map(C_)}));i+=m[0].length;continue}
+    if(r.startsWith('²')||r.startsWith('³')){out.push(mkT('pow',{a:[C_(r[0]==='²'?'2':'3')]}));i++;continue}
+    if(r.startsWith('⁻¹')){out.push(mkT('pow',{a:[C_('−'),C_('1')]}));i+=2;continue}
+    const at=ATOMS.find(a=>r.startsWith(a));if(at){out.push(C_(at));i+=at.length;continue}
+    const ch=String.fromCodePoint(r.codePointAt(0));out.push(C_(ch));i+=ch.length}
+  return out}
+function edSetText(s){edClear();parseText(String(s||'')).forEach(n=>edPut(n,false))}
+/* keys → templates */
+const ALIAS={'⁄':'frac',' ':'mixed','√(':'sqrt','∛(':'cbrt','ˣ√(':'root','ʸ√(':'root','²':'sq','³':'cube','⁻¹':'inv','^(':'pow','10^(':'tenx','e^(':'ex','Abs(':'abs','logₓ(':'logb'};
+function edTemplate(k){
+  switch(k){
+    case 'frac':{const{l,i}=ED.cur;let j=i;const isTerm=n=>n.t==='c'&&/^[0-9.A-FXYMTπe]$|^Ans$|^PreAns$/.test(n.v);
+      while(j>0&&l[j-1].t==='pow')j--;
+      if(j>0&&l[j-1].t!=='c'&&l[j-1].t!=='pow')j--;else while(j>0&&isTerm(l[j-1]))j--;
+      const num=l.splice(j,i-j);ED.cur.i=j;const n=mkT('frac',{a:num});edPut(n,false);ED.cur=num.length?{l:n.b,i:0}:{l:n.a,i:0};return}
+    case 'mixed':{const{l,i}=ED.cur;let j=i;while(j>0&&l[j-1].t==='c'&&/^[0-9]$/.test(l[j-1].v))j--;
+      const w=l.splice(j,i-j);ED.cur.i=j;const n=mkT('mixed',{w});edPut(n,false);ED.cur=w.length?{l:n.a,i:0}:{l:n.w,i:0};return}
+    case 'sqrt':case 'abs':case 'pow':case 'root':case 'logb':edPut(mkT(k),true);return;
+    case 'cbrt':{const n=mkT('root',{n:[C_('3')]});edPut(n,false);ED.cur={l:n.a,i:0};return}
+    case 'sq':edPut(mkT('pow',{a:[C_('2')]}),false);return;
+    case 'cube':edPut(mkT('pow',{a:[C_('3')]}),false);return;
+    case 'inv':edPut(mkT('pow',{a:[C_('−'),C_('1')]}),false);return;
+    case 'tenx':edPut(C_('1'),false);edPut(C_('0'),false);edPut(mkT('pow'),true);return;
+    case 'ex':edPut(C_('e'),false);edPut(mkT('pow'),true);return;
+  }}
+function edInsertText(t){
+  if(ALIAS[t]){edTemplate(ALIAS[t]);return}
+  if(t.length>1&&ATOMS.includes(t)){edPut(C_(t),false);return}
+  parseText(t).forEach(n=>edPut(n,false));
+}
+/* nodes → text the calculator engine reads */
+function edText(L=ED.root){return L.map(n=>{const S=s=>n[s].length?edText(n[s]):'□';
+  switch(n.t){case'c':return n.v;case'frac':return `((${S('a')})⁄(${S('b')}))`;case'mixed':return `(${S('w')}+(${S('a')})⁄(${S('b')}))`;
+    case'sqrt':return `√(${S('a')})`;case'root':return `ˣ√(${S('n')}, ${S('a')})`;case'pow':return `^(${S('a')})`;case'abs':return `Abs(${S('a')})`;case'logb':return `logₓ(${S('n')}, ${S('a')})`}}).join('')}
+/* nodes → short readable text (copy, CALC) */
+function edPlain(L=ED.root){const g=s=>{const t=edPlain(s);return /^[0-9.]+$|^[A-Za-zπ]$/.test(t)?t:'('+t+')'};
+  return L.map(n=>{switch(n.t){case'c':return n.v;case'frac':return g(n.a)+'/'+g(n.b);case'mixed':return edPlain(n.w)+' '+g(n.a)+'/'+g(n.b);case'sqrt':return '√'+g(n.a);
+    case'root':return g(n.n)+'√'+g(n.a);case'pow':return '^'+g(n.a);case'abs':return '|'+edPlain(n.a)+'|';case'logb':return 'log_'+g(n.n)+g(n.a)}}).join('')}
+const edHas=(t,L=ED.root)=>L.some(n=>n.t===t||(n.t!=='c'&&TPL[n.t].some(s=>edHas(t,n[s]))));
+function edBefore(){const{l,i}=ED.cur;let s='';for(let k=i-1;k>=0&&l[k].t==='c';k--)s=l[k].v+s;return s}
+/* nodes → HTML */
+let HIT=[];
+const RAD='<svg class="rad" viewBox="0 0 10 24" preserveAspectRatio="none" aria-hidden="true"><path d="M0.5 14 L3 12.5 L6 23 L9.5 0.8" vector-effect="non-scaling-stroke"/></svg>';
+function edHTML(L,showCur,isRoot){
+  const cur=showCur&&ED.cur.l===L,CAR='<span class="caret"></span>';
+  if(!L.length)return isRoot?(cur?CAR:''):`<span class="box" data-h="${HIT.push({l:L,i:0})-1}">${cur?CAR:''}</span>`;
+  let h='';
+  L.forEach((n,i)=>{if(cur&&ED.cur.i===i)h+=CAR;const sub=s=>edHTML(n[s],showCur,false);
+    switch(n.t){
+      case'c':h+=`<span class="tk" data-h="${HIT.push({l:L,i})-1}">${esc(n.v)}</span>`;break;
+      case'frac':h+=`<span class="fr"><span class="fn">${sub('a')}</span><span class="fd">${sub('b')}</span></span>`;break;
+      case'mixed':h+=`<span class="mw">${sub('w')}</span><span class="fr"><span class="fn">${sub('a')}</span><span class="fd">${sub('b')}</span></span>`;break;
+      case'sqrt':h+=`<span class="sq">${RAD}<span class="sqb">${sub('a')}</span></span>`;break;
+      case'root':h+=`<span class="sq"><span class="ri">${sub('n')}</span>${RAD}<span class="sqb">${sub('a')}</span></span>`;break;
+      case'pow':h+=`<span class="sup">${sub('a')}</span>`;break;
+      case'abs':h+=`<span class="abs">${sub('a')}</span>`;break;
+      case'logb':h+=`<span class="tk">log</span><span class="sub">${sub('n')}</span><span class="tk">(</span>${sub('a')}<span class="tk">)</span>`;break;
+    }});
+  if(cur&&ED.cur.i===L.length)h+=CAR;return h}
+function treeHTML(tree){const keep=ED.root;ED.root=tree;const h=edHTML(tree,false,true);ED.root=keep;return h}
+
+const exEl=$('#expr');
+const ex={get value(){return edText()},set value(v){edSetText(v)},focus(){}};
 let shift=false,alpha=false,hyp=false,sto=false,justEval=false,last=null,lastBool=false,note='',err='',mode='dec',engN=0,hIdx=-1;
 let hist=store.get('hist',[]),clip=store.get('clip','');
 const LAZY=/[∫Σ]|Π\(|d\/dx|lim\(|Ran|Pol\(|Rec\(|=/i;
 
-const curOf=el=>{const c=el._cur;return c==null||c>el.value.length?el.value.length:c};
-function setCur(el,c){el._cur=c;try{el.setSelectionRange(c,c)}catch(_){}}
-function ins(txt,el=ex){const s=curOf(el);el.value=el.value.slice(0,s)+txt+el.value.slice(s);setCur(el,s+txt.length)}
-function bs(el=ex){const s=curOf(el);if(!s)return;el.value=el.value.slice(0,s-1)+el.value.slice(s);setCur(el,s-1)}
-function setVal(el,v){el.value=v;el._cur=null}
+function ins(txt){edInsertText(txt)}
+function bs(){edDel()}
+function setVal(el,v){el.value=v}
 function startNew(txt){
   if(!justEval)return;
-  justEval=false;mode='dec';note='';
-  setVal(ex,/^(\+|−|×|÷|\^|²|³|⁻¹|!|%|\/|⁄|∠)/.test(txt)?'Ans':'');
+  justEval=false;mode='dec';note='';edClear();
+  if(/^(\+|−|×|÷|\^|²|³|⁻¹|!|%|\/|⁄|∠)/.test(txt))edPut(C_('Ans'),false);
 }
 function resultText(){
   if(last==null)return '';
@@ -754,6 +887,14 @@ function resultText(){
   if(mode==='fact')return factorize(last);
   return fmtMain(last);
 }
+function resultHTML(){
+  if(!lastBool&&!isC(last)&&(mode==='frac'||mode==='mixed')){const f=toFrac(last);
+    if(f&&f[1]!==1){const s=f[0]<0?'−':'',a=Math.abs(f[0]),d=f[1],fr=(n)=>`<span class="fr"><span class="fn">${n}</span><span class="fd">${d}</span></span>`;
+      if(mode==='mixed'&&a>d){const w=Math.floor(a/d);return s+w+fr(a-w*d)}return s+fr(a)}}
+  return esc(resultText())}
+function fitRes(r){r.style.fontSize='';let fs=parseFloat(getComputedStyle(r).fontSize);while(r.scrollWidth>r.clientWidth+1&&fs>15){fs-=2;r.style.fontSize=fs+'px'}}
+function paintExpr(){HIT=[];exEl.innerHTML=edHTML(ED.root,!justEval,true)||'';exEl.classList.toggle('done',justEval);
+  const c=exEl.querySelector('.caret');if(c)c.scrollIntoView({block:'nearest',inline:'nearest'});else if(justEval)exEl.scrollLeft=0}
 function altNote(){
   if(last==null||lastBool)return '';
   if(isC(last))return '= '+cxStr(last,!cfg.polar);
@@ -768,17 +909,18 @@ function paint(){
   $('#stMode').textContent=[cfg.cmplx?'CMPLX':'',cfg.disp==='norm'?'NORM':cfg.disp.toUpperCase()+cfg.dig,{auto:'MATH',always:'FRAC',deci:'DECI'}[cfg.frac]].filter(Boolean).join(' ');
   $('#stAng').textContent=ang;
   document.querySelector('.key.shift').classList.toggle('on',shift);document.querySelector('.key.alpha').classList.toggle('on',alpha);
+  paintExpr();
   const r=$('#res'),n=$('#note');
-  if(err){r.className='res err';r.textContent=err;n.textContent='';return}
-  if(justEval){r.className='res';try{r.textContent=resultText()}catch(e){mode='dec';r.textContent=resultText()}n.textContent=[note,altNote()].filter(Boolean).join('   ');return}
-  n.textContent=note;r.className='res dim';r.textContent='';
+  if(err){r.className='res err';r.textContent=err;n.textContent='';r.style.fontSize='';return}
+  if(justEval){r.className='res';try{r.innerHTML=resultHTML()}catch(e){mode='dec';r.innerHTML=resultHTML()}n.textContent=[note,altNote()].filter(Boolean).join('   ');fitRes(r);return}
+  n.textContent=note;r.className='res dim';r.textContent='';r.style.fontSize='';
   const src=ex.value.trim();
-  if(src&&!LAZY.test(src)){try{const o=run(src,false);r.textContent='= '+fmtVal(o.r,o.bool)}catch(e){}}
+  if(src&&!LAZY.test(src)&&!src.includes('□')){try{const o=run(src,false);r.textContent=fmtVal(o.r,o.bool);fitRes(r)}catch(e){}}
 }
-function record(e,r,n,b){hist.unshift({e,r,n,b});hist=hist.slice(0,40);store.set('hist',hist)}
+function record(e,r,n,b){hist.unshift({e,r,n,b,t:edClone(ED.root)});hist=hist.slice(0,40);store.set('hist',hist)}
 function setAnswer(v,b,src,n){preAns=ans;ans=b?(v?1:0):v;last=ans;lastBool=!!b;note=n||'';err='';mode='dec';justEval=true;
   if(!lastBool&&!isC(last)&&!Number.isInteger(last)){const f=toFrac(last);
-    if(f&&f[1]<=1e6&&(cfg.frac==='always'||(cfg.frac==='auto'&&src&&src.includes('⁄'))))mode=/\d\s+\d+⁄/.test(src)?'mixed':'frac'}
+    if(f&&f[1]<=(cfg.frac==='always'?1e6:1e4)&&(cfg.frac==='always'||(cfg.frac==='auto'&&src&&src.includes('⁄'))))mode=(edHas('mixed')||/\d\s+\d+⁄/.test(src))?'mixed':'frac'}
   saveVars();if(src)record(src,ans,note,lastBool)}
 function doEq(){
   const src=ex.value.trim();if(!src)return;
@@ -791,7 +933,7 @@ function doSolve(){
   catch(e){err=e.message;justEval=false}
 }
 function currentValue(){if(justEval&&last!=null)return last;if(!ex.value.trim())return ans;doEq();return err?null:last}
-function loadHist(i){const h=hist[i];setVal(ex,h.e.replace(/^SOLVE\s+/,''));justEval=false;err='';note=''}
+function loadHist(i){const h=hist[i];if(h.t)edLoad(h.t);else edSetText(h.e.replace(/^SOLVE\s+/,''));justEval=false;err='';note=''}
 function insertText(t){startNew(t);ins(t);err=''}
 function act(a){
   if(a.startsWith('ins:')){insertText(a.slice(4));return}
@@ -824,7 +966,7 @@ function act(a){
     case 'hist':paintHist();$('#histSheet').hidden=false;return;
     case 'dms':
       if(justEval&&last!=null&&!isC(last)&&!lastBool){mode=mode==='dms'?'dec':'dms';return}
-      {const seg=(ex.value.slice(0,curOf(ex)).match(/[0-9.°′″'"]*$/)||[''])[0];
+      {const seg=(edBefore().match(/[0-9.°′″'"]*$/)||[''])[0];
        const t=/[″"]/.test(seg)?'':/[′']/.test(seg)?'″':seg.includes('°')?'′':'°';if(t){startNew('');ins(t)}}return;
     case 'fact':
       if(last==null||isC(last)){err='Calculate a whole number first, then press SHIFT °′″ (FACT)';return}
@@ -838,15 +980,15 @@ function act(a){
     case 'bs':if(justEval){justEval=false;note=''}bs();err='';return;
     case 'ac':setVal(ex,'');err='';note='';justEval=false;mode='dec';hyp=false;return;
     case 'clrall':VARN.forEach(v=>vars[v]=0);ans=0;preAns=0;hist=[];store.set('hist',hist);saveVars();setVal(ex,'');last=null;err='';note='';justEval=false;toast('Cleared memory, variables and history');return;
-    case 'copy':{if(!(justEval&&last!=null)&&!ex.value.trim()){toast('Nothing to copy yet');return}
-      const txt=justEval&&last!=null?resultText().replace(/−/g,'-').replace(/̅/g,''):ex.value;
-      clip=justEval&&last!=null&&!lastBool?exprOf(last):ex.value;store.set('clip',clip);
+    case 'copy':{if(!(justEval&&last!=null)&&edIsEmpty()){toast('Nothing to copy yet');return}
+      const txt=justEval&&last!=null?resultText().replace(/−/g,'-').replace(/̅/g,''):edPlain();
+      clip=justEval&&last!=null&&!lastBool?exprOf(last):edPlain();store.set('clip',clip);
       if(navigator.clipboard)navigator.clipboard.writeText(txt).then(()=>toast('Copied '+txt),()=>toast('Copied inside the calculator. Use ALPHA 0 to paste.'));else toast('Copied inside the calculator. Use ALPHA 0 to paste.');return}
     case 'paste':if(!clip){toast('Nothing copied yet. Use SHIFT 0 (COPY) first.');return}insertText(clip);return;
     case 'eq':doEq();return;
-    case 'up':if(!hist.length){toast('No history yet');return}hIdx=Math.min(hIdx+1,hist.length-1);loadHist(hIdx);return;
-    case 'down':if(hIdx<=0){hIdx=-1;setVal(ex,'');justEval=false;return}hIdx--;loadHist(hIdx);return;
-    case 'left':case 'right':{if(justEval){justEval=false;note=''}const c=Math.max(0,Math.min(ex.value.length,curOf(ex)+(a==='left'?-1:1)));ex.focus({preventScroll:true});setCur(ex,c);return}
+    case 'up':if(!justEval&&edVert(-1))return;if(!hist.length){toast('No history yet');return}hIdx=Math.min(hIdx+1,hist.length-1);loadHist(hIdx);return;
+    case 'down':if(!justEval&&edVert(1))return;if(hIdx<=0){hIdx=-1;setVal(ex,'');justEval=false;return}hIdx--;loadHist(hIdx);return;
+    case 'left':case 'right':{if(justEval){justEval=false;note='';ED.cur={l:ED.root,i:a==='left'?ED.root.length:0};return}if(a==='left')edLeft();else edRight();return}
     case 'angle':ang=ang==='DEG'?'RAD':ang==='RAD'?'GRA':'DEG';store.set('ang',ang);toast('Angle unit: '+({DEG:'degrees',RAD:'radians',GRA:'grads'})[ang]);return;
   }
 }
@@ -870,9 +1012,21 @@ $('#calc').addEventListener('click',e=>{
   const pd=e.target.closest('[data-pad]');if(pd){act(pd.dataset.pad);paint();return}
   const k=e.target.closest('.key');if(!k)return;if(lpFired){lpFired=false;return}pressKey(ALLK[+k.dataset.i]);paint()});
 $('#stAng').addEventListener('click',()=>{act('angle');paint()});
-ex.addEventListener('input',()=>{ex._cur=ex.selectionStart;justEval=false;err='';note='';paint()});
-['click','keyup','select'].forEach(t=>ex.addEventListener(t,()=>{ex._cur=ex.selectionStart}));
-ex.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();doEq();paint()}else if(e.key==='Escape'){act('ac');paint()}});
+exEl.addEventListener('click',e=>{const t=e.target.closest('[data-h]');
+  if(justEval){justEval=false;note=''}
+  if(t){const h=HIT[+t.dataset.h];if(h){let i=h.i;if(t.classList.contains('tk')){const rc=t.getBoundingClientRect();if(e.clientX>rc.left+rc.width/2)i++}ED.cur={l:h.l,i}}}
+  else ED.cur={l:ED.root,i:ED.root.length};
+  err='';paint()});
+const KEYMAP={'*':'×','x':'×','/':'÷','-':'−','+':'+','(':'(',')':')','.':'.',',':', ','!':'!','%':'%','=':'='};
+document.addEventListener('keydown',e=>{
+  if($('#calc').hidden||e.ctrlKey||e.metaKey||e.altKey)return;
+  const ae=document.activeElement;if(ae&&/^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName))return;
+  if([...document.querySelectorAll('.sheet')].some(s=>!s.hidden))return;
+  const k=e.key;let a=null;
+  if(/^[0-9]$/.test(k))a='ins:'+k;else if(KEYMAP[k])a='ins:'+KEYMAP[k];else if(k==='^')a='ins:^(';
+  else if(k==='Enter')a='eq';else if(k==='Backspace')a='bs';else if(k==='Escape'||k==='Delete')a='ac';
+  else if(k==='ArrowLeft')a='left';else if(k==='ArrowRight')a='right';else if(k==='ArrowUp')a='up';else if(k==='ArrowDown')a='down';
+  if(!a)return;e.preventDefault();shift=false;alpha=false;act(a);paint()});
 
 /* ---------- sheets ---------- */
 document.querySelectorAll('.sheet').forEach(s=>s.addEventListener('click',e=>{if(e.target===s||e.target.closest('[data-close]')){s.hidden=true;paint()}}));
@@ -898,7 +1052,7 @@ const nice=x=>{if(!isFinite(x))return x;const r=Math.round(x);return Math.abs(x-
 
 /* history */
 function paintHist(){
-  $('#histList').innerHTML=hist.length?hist.map((x,i)=>`<button data-i="${i}"><span>${esc(x.e)}</span><span>${esc(fmtVal(x.r,x.b))}</span>${x.n?`<small>${esc(x.n)}</small>`:''}</button>`).join(''):'<div class="empty">Answers you calculate with = appear here. Tap one to reuse it.</div>';
+  $('#histList').innerHTML=hist.length?hist.map((x,i)=>`<button data-i="${i}"><span class="mexpr mini">${/^SOLVE/.test(x.e)?'<span class="tk">SOLVE </span>':''}${x.t?treeHTML(x.t):esc(x.e)}</span><span>${esc(fmtVal(x.r,x.b))}</span>${x.n?`<small>${esc(x.n)}</small>`:''}</button>`).join(''):'<div class="empty">Answers you calculate with = appear here. Tap one to reuse it.</div>';
 }
 $('#histList').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;loadHist(+b.dataset.i);$('#histSheet').hidden=true;paint()});
 $('#clrHist').addEventListener('click',()=>{hist=[];store.set('hist',hist);paintHist()});
@@ -975,7 +1129,7 @@ function openCalc(){
   let used;try{used=[...new Set(tokenize(rhs).filter(t=>t.k==='v').map(t=>t.v))]}catch(e){err=e.message;return}
   const b=sheet('calcSheet','CALC');
   b.innerHTML=`<p class="hint">Enter a value for each variable, then press Calculate. Change values and press again to repeat.</p>
-  <div class="big" style="font-size:1.05rem">${target?esc(target)+' = ':''}${esc(rhs)}</div>
+  <div class="big mexpr mini">${treeHTML(ED.root)}</div>
   ${used.length?used.map(v=>`<div class="vrow" style="grid-template-columns:2rem 1fr"><b>${v}</b><input type="text" inputmode="decimal" id="cv-${v}" value="${esc(isC(vars[v])?exprOf(vars[v]):vars[v])}"></div>`).join(''):'<p class="hint">There are no variables in this expression.</p>'}
   <button class="op primary" id="calcGo">Calculate</button><div class="result"><div class="big" id="calcOut"></div></div>`;
   const go=()=>{try{for(const v of used){const el=$('#cv-'+v);vars[v]=el.value.trim()?run(el.value,false).r:0}
@@ -1458,7 +1612,7 @@ $('#ftHelp').onclick=()=>{$('#ftHelpSheet').hidden=false};
 paintFracs();
 
 /* ---------- boot ---------- */
-try{const o=run(ex.value,false);last=o.r;lastBool=o.bool;justEval=true}catch(e){}
+
 paint();units();ftPaint();showTab();
 </script>
 
