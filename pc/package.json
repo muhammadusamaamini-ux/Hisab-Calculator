@@ -1,0 +1,63 @@
+{
+  "name": "hisab-calculator-pc",
+  "productName": "Hisab Calculator",
+  "version": "1.0.0",
+  "description": "Hisab Calculator for Windows: scientific, units and feet-inches calculator",
+  "main": "src/main.js",
+  "author": "Muhammad Usama",
+  "license": "UNLICENSED",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win --publish never"
+  },
+  "dependencies": {
+    "electron-updater": "^6.3.9"
+  },
+  "devDependencies": {
+    "electron": "^31.7.7",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.usama.hisab.pc",
+    "productName": "Hisab Calculator",
+    "copyright": "Personal use",
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "buildResources": "resources",
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "resources/icon.png",
+      "artifactName": "HisabCalculator-Setup.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Hisab Calculator"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "muhammadusamaamini-ux",
+        "repo": "Hisab-Calculator"
+      }
+    ],
+    "releaseInfo": {
+      "releaseNotesFile": "resources/release-notes.md"
+    }
+  }
+}

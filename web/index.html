@@ -1,0 +1,1490 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);box-sizing:border-box;height:100%}body{margin:0;font:14px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}img{max-width:100%}[hidden]{display:none!important}*{-webkit-tap-highlight-color:transparent}</style>
+<title>Hisab Calculator</title>
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+/* Layout: one screen-high column; tabs on top, LCD, then a keypad that stretches to fill whatever height the phone has */
+:root{
+  --bg:#e7eaee; --surface:#ffffff; --ink:#15202a; --muted:#5a6977; --line:#cfd8e0;
+  --key:#f6f8fa; --key-op:#dde5ec; --accent:#d97a1f; --on-accent:#ffffff; --bad:#b4372c; --soft:#f3e3d1;
+  --k-fn:#dde2e8; --k-num:#fbfcfd; --k-ink:#15202a; --shift:#f2b632; --shift-ink:#2b1d00;
+  --del:#e8823f; --del-ink:#200e02; --lcd:#d3e4df; --lcd-ink:#15302a; --lcd-err:#a3261b; --lab-s:#986000; --alpha:#7a63e0; --alpha-ink:#ffffff; --lab-a:#5a3fcf; --shadow:rgba(20,30,40,.22);
+  --f-ui:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-head:"Barlow Condensed","Barlow",system-ui,sans-serif;
+  --f-num:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#16181b; --surface:#1f2226; --ink:#e8ecef; --muted:#9099a3; --line:#33383f;
+  --key:#272b30; --key-op:#30353b; --accent:#ef9a45; --on-accent:#1a1006; --bad:#f07a6e; --soft:#3a2b1c;
+  --k-fn:#363a40; --k-num:#2a2d32; --k-ink:#eef0f2; --shift:#f5c33b; --shift-ink:#241800;
+  --del:#ec8f52; --del-ink:#200e02; --lcd:#d3e4df; --lcd-ink:#12241f; --lcd-err:#a3261b; --lab-s:#f5c33b; --alpha:#8a76ea; --alpha-ink:#ffffff; --lab-a:#b4a6ff; --shadow:rgba(0,0,0,.5); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#16181b; --surface:#1f2226; --ink:#e8ecef; --muted:#9099a3; --line:#33383f;
+  --key:#272b30; --key-op:#30353b; --accent:#ef9a45; --on-accent:#1a1006; --bad:#f07a6e; --soft:#3a2b1c;
+  --k-fn:#363a40; --k-num:#2a2d32; --k-ink:#eef0f2; --shift:#f5c33b; --shift-ink:#241800;
+  --del:#ec8f52; --del-ink:#200e02; --lcd:#d3e4df; --lcd-ink:#12241f; --lcd-err:#a3261b; --lab-s:#f5c33b; --alpha:#8a76ea; --alpha-ink:#ffffff; --lab-a:#b4a6ff; --shadow:rgba(0,0,0,.5); color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-ui);font-size:15px;line-height:1.4;overflow:hidden}
+.app{height:100%;max-width:520px;margin:0 auto;padding-block:8px;padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:8px}
+nav{flex:0 0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--key-op);padding:3px;border-radius:11px}
+nav a{text-align:center;padding:6px 4px;border-radius:8px;color:var(--muted);text-decoration:none;font-weight:600;font-size:.88rem}
+nav a[aria-current="page"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px var(--shadow)}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+section{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;gap:8px}
+#units{overflow-y:auto}
+
+/* ---- scientific ---- */
+.lcd{flex:0 0 auto;background:var(--lcd);color:var(--lcd-ink);border-radius:13px;padding:6px 12px 8px;display:flex;flex-direction:column;gap:1px;min-width:0}
+.status{display:flex;gap:9px;font:600 .66rem var(--f-num);letter-spacing:.04em}
+.status span{opacity:.18}.status span.on{opacity:1}
+.status .ang{margin-left:auto;opacity:1}
+.status .angbtn{opacity:.85}
+.lcd input{font:400 1.2rem/1.3 var(--f-num);color:var(--lcd-ink);background:transparent;border:0;width:100%;padding:2px 0;caret-color:#6a4fe0}
+.lcd input:focus{outline:none}
+.res{font:600 1.75rem/1.2 var(--f-num);text-align:right;white-space:nowrap;overflow-x:auto;min-height:2.1rem}
+.res.dim{opacity:.5;font-size:1.3rem;font-weight:400;line-height:2.1rem}
+.res.err{color:var(--lcd-err);font:600 .9rem/1.25 var(--f-ui);white-space:normal}
+.note{font:500 .76rem var(--f-num);text-align:right;min-height:1em;opacity:.75;overflow-wrap:anywhere}
+.keypad{flex:1 1 auto;min-height:0;max-height:600px;display:flex;flex-direction:column;gap:6px}
+.fgrid,.ngrid{display:grid;gap:1px 6px;min-height:0}
+.fgrid{flex:4 1 0;grid-template-columns:repeat(6,minmax(0,1fr));grid-template-rows:repeat(4,minmax(0,1fr))}
+.ngrid{flex:4.8 1 0;grid-template-columns:repeat(5,minmax(0,1fr));grid-template-rows:repeat(4,minmax(0,1fr));gap:1px 8px}
+.cell{display:flex;flex-direction:column;min-width:0;min-height:0}
+.lab{flex:0 0 13px;text-align:center;font:600 .62rem/13px var(--f-num);color:var(--lab-s);white-space:nowrap;overflow:hidden}
+.key{flex:1 1 auto;min-height:26px;width:100%;border-radius:10px;border:0;background:var(--k-fn);color:var(--k-ink);font:500 1rem var(--f-ui);cursor:pointer;box-shadow:0 2px 0 var(--shadow);touch-action:manipulation;user-select:none;-webkit-user-select:none;padding:0 2px;white-space:nowrap}
+.key:active{transform:translateY(1px);box-shadow:0 1px 0 var(--shadow)}
+.ngrid .key{background:var(--k-num);font-size:1.45rem}
+.ngrid .key.small{font-size:1.15rem}
+.key.shift{background:var(--shift);color:var(--shift-ink);font-weight:700;font-size:.85rem}
+.key.del{background:var(--del);color:var(--del-ink);font-weight:600}
+.key.on{box-shadow:inset 0 0 0 3px var(--k-ink)}
+.key{-webkit-touch-callout:none}
+.key.held{background:var(--shift)!important;color:var(--shift-ink)!important}
+.angbtn{margin-left:auto;border:1px solid currentColor;background:none;color:inherit;border-radius:6px;font:700 .66rem var(--f-num);padding:1px 6px;cursor:pointer;opacity:.85}
+.seg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;background:var(--key-op);padding:3px;border-radius:10px}
+.seg button{border:0;background:none;color:var(--muted);border-radius:8px;padding:7px 2px;font:600 .8rem var(--f-ui);cursor:pointer}
+.seg button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px var(--shadow)}
+.eqrow{display:grid;gap:6px;align-items:end}
+.eqrow label{font-size:.8rem;text-transform:none;font-family:var(--f-num)}
+.eqrow input{padding:8px}
+.eqres{display:flex;flex-direction:column;gap:6px}
+.eqres div{display:flex;justify-content:space-between;align-items:center;gap:10px;font:500 .95rem var(--f-num)}
+.eqres div span{overflow-wrap:anywhere}
+.ftgrid .key.space{grid-column:span 2;background:var(--k-fn);font-size:1rem;letter-spacing:.04em}
+
+/* ---- sheets ---- */
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;justify-content:center;z-index:30}
+.card{background:var(--surface);color:var(--ink);width:100%;max-width:520px;max-height:82%;overflow:auto;border-radius:18px 18px 0 0;padding-top:14px;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:10px}
+.card-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.card-head h2{font-family:var(--f-head);font-size:1.25rem;margin:0}
+.close{border:1px solid var(--line);background:var(--key);color:var(--ink);border-radius:8px;padding:6px 12px;font:600 .9rem var(--f-ui);cursor:pointer}
+.hint{margin:0;color:var(--muted);font-size:.85rem}
+.vrow{display:grid;grid-template-columns:2rem 1fr auto;gap:8px;align-items:center}
+.vrow b{font:600 1.1rem var(--f-num);color:var(--accent)}
+.vrow input{font:500 1rem var(--f-num);color:var(--ink);background:var(--key);border:1px solid var(--line);border-radius:9px;padding:9px;width:100%;min-width:0}
+.ins{border:1px solid var(--line);background:var(--key-op);color:var(--ink);border-radius:8px;padding:8px 10px;font:600 .85rem var(--f-ui);cursor:pointer;white-space:nowrap}
+.list button{display:grid;grid-template-columns:1fr auto;gap:2px 12px;width:100%;text-align:left;border:0;border-top:1px solid var(--line);background:none;color:var(--ink);padding:9px 2px;font:inherit;cursor:pointer}
+.list small{color:var(--muted);grid-column:1/-1}
+.list span:nth-child(2){font-family:var(--f-num);text-align:right;font-weight:600;overflow-wrap:anywhere}
+.list span:first-child{overflow-wrap:anywhere}
+.empty{color:var(--muted);font-size:.88rem;padding:6px 0}
+.textbtn{border:0;background:none;color:var(--muted);font:500 .85rem var(--f-ui);cursor:pointer;text-decoration:underline;align-self:flex-start;padding:0}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{border:1px solid var(--line);background:var(--key);color:var(--ink);border-radius:999px;padding:6px 11px;font:400 .85rem var(--f-num);cursor:pointer}
+.guide{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:.88rem;margin:0}
+.guide dt{font-family:var(--f-num);font-weight:600;white-space:nowrap}
+.guide dd{margin:0;color:var(--muted)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:999px;font:500 .9rem var(--f-ui);z-index:40;max-width:90%;text-align:center}
+
+/* ---- units ---- */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px;min-width:0;flex:0 0 auto}
+.panel h2{font-family:var(--f-head);font-size:1.15rem;font-weight:600;margin:0;letter-spacing:.02em}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row>*{flex:1 1 120px;min-width:0}
+label{display:flex;flex-direction:column;gap:4px;font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+input[type=number],select{font:500 1rem var(--f-ui);color:var(--ink);background:var(--key);border:1px solid var(--line);border-radius:9px;padding:10px;width:100%;min-width:0;text-transform:none;letter-spacing:0}
+input[type=number]{font-family:var(--f-num)}
+.result{background:var(--soft);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:6px}
+.big{font:600 1.35rem/1.25 var(--f-num);color:var(--ink);overflow-wrap:anywhere}
+.swap{flex:0 0 46px!important;align-self:flex-end;height:44px;border-radius:9px;border:1px solid var(--line);background:var(--key-op);color:var(--ink);font-size:1.2rem;cursor:pointer}
+.table{display:flex;flex-direction:column}
+.table button{display:flex;justify-content:space-between;gap:12px;padding:9px 2px;border:0;border-top:1px solid var(--line);background:none;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.table button span:last-child{font-family:var(--f-num);font-variant-numeric:tabular-nums;text-align:right;overflow-wrap:anywhere}
+.table button.cur{color:var(--accent);font-weight:600}
+
+/* ---- ft-in ---- */
+.ftlcd .lines{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px 12px;font:500 .78rem var(--f-num);margin:2px 0 0;opacity:.8}
+.ftlcd .lines div{display:flex;justify-content:space-between;gap:6px;min-width:0}
+.ftlcd .lines span:last-child{overflow-wrap:anywhere;text-align:right}
+.ftlcd input{text-align:left}
+.tools{flex:0 0 auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tools label{flex-direction:row;align-items:center;gap:6px;font-size:.7rem}
+.tools select{width:auto;padding:5px 8px;font-size:.9rem}
+.tools .sp{flex:1}
+.linkbtn{border:1px solid var(--line);background:var(--key);color:var(--ink);border-radius:8px;padding:5px 10px;font:500 .82rem var(--f-ui);cursor:pointer}
+.ftgrid{flex:1 1 auto;min-height:0;max-height:400px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));grid-template-rows:repeat(4,minmax(0,1fr));gap:7px}
+.tape{max-height:4.4em;overflow-y:auto;font:400 .85rem/1.45 var(--f-num);opacity:.7;display:flex;flex-direction:column}
+.tl{display:flex;justify-content:space-between;gap:10px}
+.tl b{width:1.2em;font-weight:600}
+.tl.tot{opacity:1;font-weight:600}
+.entry{display:flex;align-items:baseline;gap:10px;font:500 1.4rem/1.35 var(--f-num);min-height:1.9rem}
+.entry .op{width:1.1em;font-weight:600;opacity:.7}
+.entry .pt{border-bottom:2px solid transparent;padding:0 1px}
+.entry .pt.act{border-bottom-color:var(--lcd-ink)}
+.entry .dimpt{opacity:.4}
+#ftType{font:500 1.25rem var(--f-num);color:var(--lcd-ink);background:rgba(255,255,255,.45);border:1px solid rgba(0,0,0,.2);border-radius:8px;padding:5px 8px;width:100%}
+#ftType::placeholder{color:var(--lcd-ink);opacity:.45}
+.fracs{flex:0 0 auto;display:grid;gap:5px}
+.fracs button{min-width:0;padding:0;height:38px;border-radius:9px;border:0;background:var(--k-fn);color:var(--k-ink);font:600 .82rem var(--f-num);cursor:pointer;box-shadow:0 2px 0 var(--shadow);touch-action:manipulation;letter-spacing:-.03em}
+.fracs button.tog{background:var(--key-op);color:var(--accent);font:700 .74rem var(--f-ui)}
+.ftgrid .key{background:var(--k-num);font-size:1.4rem}
+.ftgrid .key.fn{background:var(--k-fn);font-size:1rem}
+.ftgrid .key.op{background:var(--k-fn);font-size:1.45rem}
+.ftgrid .key.del{background:var(--del);color:var(--del-ink);font-weight:600}
+.ftgrid .key.eq{background:var(--accent);color:var(--on-accent);font-weight:700}
+@media (prefers-reduced-motion: reduce){.key:active{transform:none}}
+
+/* ---- v6 keypad: SHIFT + ALPHA ---- */
+.fgrid{flex:5 1 0;grid-template-columns:repeat(6,minmax(0,1fr));grid-template-rows:repeat(5,minmax(0,1fr))}
+.ngrid{flex:4.6 1 0}
+.keypad{max-height:660px;gap:4px}
+.lab{display:flex;justify-content:center;gap:5px}
+.lab .s{color:var(--lab-s)}.lab .a{color:var(--lab-a)}
+.lab.tight{font-size:.52rem;gap:3px;letter-spacing:-.04em}
+.key.alpha{background:var(--alpha);color:var(--alpha-ink);font-weight:700;font-size:.8rem}
+.key.shift{font-size:.8rem}
+.key.it{font-style:italic}
+.fgrid .key{font-size:.95rem}
+.pad{grid-area:1/3/3/5;margin-top:13px;background:var(--k-fn);border-radius:22px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);box-shadow:0 2px 0 var(--shadow);min-height:0;overflow:hidden}
+.pad button{border:0;background:none;color:var(--k-ink);font-size:.85rem;cursor:pointer;opacity:.8;touch-action:manipulation;padding:0;min-height:0}
+.pad button:active{opacity:1;background:var(--key-op)}
+.pad .dot{grid-area:2/2;place-self:center;width:13px;height:13px;border-radius:50%;background:var(--k-ink);opacity:.7}
+.stk{display:inline-flex;flex-direction:column;align-items:center;line-height:1;font-size:.78rem;vertical-align:middle}
+.stk b{font-weight:500;padding:0 2px}
+.stk b:first-child{border-bottom:1.5px solid currentColor}
+.status{align-items:center}
+.status .mode{opacity:.6}
+.card .body{display:flex;flex-direction:column;gap:10px}
+.card h3{font-family:var(--f-head);font-size:.95rem;margin:4px 0 0;letter-spacing:.05em;color:var(--muted);text-transform:uppercase}
+.list h3{padding:10px 2px 2px}
+.seg button{white-space:normal;line-height:1.15}
+.opgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px}
+.op{border:1px solid var(--line);background:var(--key);color:var(--ink);border-radius:9px;padding:9px 6px;font:600 .85rem var(--f-ui);cursor:pointer;min-width:0}
+.op.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.mgrid{display:grid;gap:5px}
+.mgrid input,.ti{font:500 .95rem var(--f-num);color:var(--ink);background:var(--key);border:1px solid var(--line);border-radius:8px;padding:8px 6px;width:100%;min-width:0;text-align:center;text-transform:none;letter-spacing:0}
+.mhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.mhead label{flex-direction:row;align-items:center;gap:4px}
+.mhead select{width:auto;padding:5px}
+.mres{display:grid;gap:4px;font:600 1rem var(--f-num);text-align:center}
+.mres span{background:var(--surface);border-radius:6px;padding:6px 4px;overflow-wrap:anywhere}
+.kv{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:6px 10px;align-items:center;font-size:.92rem}
+.kv>span:nth-child(3n+1){color:var(--muted)}
+.kv>span:nth-child(3n+2){font-family:var(--f-num);font-weight:600;text-align:right;overflow-wrap:anywhere}
+.ins.sm{padding:4px 8px;font-size:.78rem}
+.stbl{display:grid;gap:5px;align-items:center}
+.xbtn{border:0;background:none;color:var(--muted);font-size:1.2rem;cursor:pointer;padding:4px}
+.ttbl{width:100%;border-collapse:collapse;font:500 .88rem var(--f-num)}
+.ttbl th,.ttbl td{padding:5px 6px;border-top:1px solid var(--line);text-align:right}
+.ttbl th{color:var(--muted);font-weight:600;position:sticky;top:0;background:var(--soft)}
+.tscroll{max-height:42vh;overflow:auto}
+.chips button{font-size:.82rem}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <nav aria-label="Calculator mode">
+    <a href="#calc" data-tab="calc">Scientific</a>
+    <a href="#units" data-tab="units">Units</a>
+    <a href="#feet" data-tab="feet">Feet-inches</a>
+  </nav>
+
+  <!-- SCIENTIFIC -->
+  <section id="calc">
+    <div class="lcd">
+      <div class="status"><span id="stS">S</span><span id="stA">A</span><span id="stH">hyp</span><span id="stSto">STO</span><span id="stM">M</span><span id="stMode" class="mode"></span><button class="angbtn" id="stAng" aria-label="Change angle unit">DEG</button></div>
+      <input id="expr" inputmode="none" autocomplete="off" spellcheck="false" aria-label="Expression" value="√(3²+4²)">
+      <div id="res" class="res" aria-live="polite"></div>
+      <div id="note" class="note"></div>
+    </div>
+    <div class="keypad">
+      <div class="fgrid" id="fgrid">
+        <div class="pad" aria-label="Cursor and history">
+          <button data-pad="up" style="grid-area:1/2" aria-label="Previous calculation">▲</button>
+          <button data-pad="left" style="grid-area:2/1" aria-label="Move cursor left">◀</button>
+          <span class="dot"></span>
+          <button data-pad="right" style="grid-area:2/3" aria-label="Move cursor right">▶</button>
+          <button data-pad="down" style="grid-area:3/2" aria-label="Next calculation">▼</button>
+        </div>
+      </div>
+      <div class="ngrid" id="ngrid"></div>
+    </div>
+  </section>
+
+  <!-- UNITS -->
+  <section id="units" hidden>
+    <div class="panel">
+      <label>Quantity <select id="uCat"></select></label>
+      <label>Value <input type="number" id="uVal" value="10" step="any" inputmode="decimal"></label>
+      <div class="row">
+        <label>From <select id="uFrom"></select></label>
+        <button class="swap" id="uSwap" aria-label="Swap units">⇄</button>
+        <label>To <select id="uTo"></select></label>
+      </div>
+      <div class="result"><div class="big" id="uOut"></div><div id="uNote" style="color:var(--muted);font-size:.85rem"></div></div>
+    </div>
+    <div class="panel">
+      <h2>In every unit</h2>
+      <p class="hint">Tap a row to make it the “To” unit.</p>
+      <div class="table" id="uAll"></div>
+    </div>
+  </section>
+
+  <!-- FEET-INCHES -->
+  <section id="feet" hidden>
+    <div class="lcd ftlcd">
+      <div class="status"><span class="on" id="ftDim">LENGTH</span><span class="on" id="ftHint" style="opacity:.55"></span><span class="ang" id="ftRoundLbl">±1/16″</span></div>
+      <div class="tape" id="tape"></div>
+      <div class="entry" id="entry"></div>
+      <input id="ftType" hidden autocomplete="off" spellcheck="false" inputmode="text" enterkeyhint="done" placeholder="Type like 65 2 3/8" aria-label="Type a length">
+      <div id="ftTotal" class="res" aria-live="polite"></div>
+      <div class="lines" id="ftOut"></div>
+    </div>
+    <div class="tools">
+      <label>Round <select id="ftDen"><option value="2">1/2"</option><option value="4">1/4"</option><option value="8">1/8"</option><option value="16" selected>1/16"</option><option value="32">1/32"</option><option value="64">1/64"</option></select></label>
+      <span class="sp"></span>
+      <button class="linkbtn" id="ftHelp">How to use</button>
+      <button class="linkbtn" id="ftKbd">Type</button>
+    </div>
+    <div class="fracs" id="fracs"></div>
+    <div class="ftgrid" id="ftKeys"></div>
+  </section>
+</div>
+
+<div class="sheet" id="varSheet" hidden>
+  <div class="card" role="dialog" aria-label="Variables">
+    <div class="card-head"><h2>RCL · variables</h2><button class="close" data-close>Done</button></div>
+    <p class="hint">Edit a value or tap Insert. To store an answer, press SHIFT RCL (STO) and then a variable key. X is used by ∫, d/dx, Σ, SOLVE and TABLE.</p>
+    <div id="varList" style="display:flex;flex-direction:column;gap:8px"></div>
+    <button class="textbtn" id="clrVars">Set all variables to 0</button>
+  </div>
+</div>
+<div class="sheet" id="constSheet" hidden>
+  <div class="card" role="dialog" aria-label="Constants">
+    <div class="card-head"><h2>CONST · constants</h2><button class="close" data-close>Done</button></div>
+    <div class="list" id="constList"></div>
+  </div>
+</div>
+<div class="sheet" id="histSheet" hidden>
+  <div class="card" role="dialog" aria-label="History">
+    <div class="card-head"><h2>History</h2><button class="close" data-close>Done</button></div>
+    <div class="list" id="histList"></div>
+    <button class="textbtn" id="clrHist">Clear history</button>
+  </div>
+</div>
+<div class="sheet" id="helpSheet" hidden>
+  <div class="card" role="dialog" aria-label="Help">
+    <div class="card-head"><h2>HELP · what every key does</h2><button class="close" data-close>Done</button></div>
+    <p class="hint">Yellow labels: press SHIFT first, or hold the key. Purple labels: press ALPHA first. Tap an example to load it.</p>
+    <div class="chips" id="sciEx"></div>
+    <h3>Top keys</h3>
+    <dl class="guide">
+      <dt>MODE</dt><dd>Setup: COMP or CMPLX, angle unit, Fix/Sci decimals, fraction or decimal answers. Also opens EQN, MATRIX, VECTOR, STAT, DISTR and TABLE.</dd>
+      <dt>2nd</dt><dd>List of every function. Tap one to type it.</dd>
+      <dt>▲ ▼ ◀ ▶</dt><dd>▲▼ step through past calculations, ◀▶ move the cursor</dd>
+      <dt>CALC</dt><dd>Works out an expression for values you enter, e.g. 2X+Y. Also stores Y=2X+3 into Y.</dd>
+      <dt>SOLVE</dt><dd>SHIFT CALC. Finds X in an equation (ALPHA CALC types =), e.g. X²−5X+6=0</dd>
+      <dt>∫dx · d/dx</dt><dd>∫(f, a, b) is the area under f(X). d/dx(f, a) is the slope at X = a. ALPHA ∫dx types ;</dd>
+      <dt>x⁻¹ · x! · &gt;&lt;=</dt><dd>1 ÷ x, factorial, and comparison signs (&gt; &lt; ≥ ≤ ≠). A comparison answers True or False.</dd>
+      <dt>logₓy · Σ · Π</dt><dd>Log to any base logₓ(base, value). Σ(f, a, b) sums f(X) and Π(f, a, b) multiplies f(X) for X = a to b.</dd>
+    </dl>
+    <h3>Function keys</h3>
+    <dl class="guide">
+      <dt>x/y · x y/z</dt><dd>Fractions: 3 x/y 4 is 3⁄4. For 2 3⁄4 press SHIFT x/y (a space) between 2 and 3⁄4. ALPHA gives ÷R (quotient and remainder).</dd>
+      <dt>√x · ∛x · mod</dt><dd>Square root, cube root, mod(a, b) remainder</dd>
+      <dt>x² · x³ · 0.‾3</dt><dd>Powers. ALPHA x² types the recurring bar: 0.1‾6 means 0.1666…</dd>
+      <dt>xʸ · ˣ√y</dt><dd>Any power, and any root ˣ√(n, value)</dd>
+      <dt>log · ln · 10ˣ · eˣ</dt><dd>Logs and their inverses</dd>
+      <dt>(−) · ∠</dt><dd>Negative sign. SHIFT gives ∠ for polar complex numbers (5∠53.13).</dd>
+      <dt>°′″ · FACT</dt><dd>Type angles as 30°15′20″. After =, it converts the answer to degrees-minutes-seconds. SHIFT gives prime factors (FACT).</dd>
+      <dt>hyp · |x|</dt><dd>hyp then sin/cos/tan gives sinh/cosh/tanh. SHIFT gives the absolute value.</dd>
+      <dt>sin cos tan</dt><dd>Hold or SHIFT for sin⁻¹, cos⁻¹, tan⁻¹</dd>
+      <dt>RCL · STO · CLRv</dt><dd>See and edit variables, store the answer in one, or clear them all</dd>
+      <dt>ENG · i · cot</dt><dd>ENG shows ×10³ steps (press again to move). SHIFT types i for complex numbers. ALPHA gives cot.</dd>
+      <dt>( ) · % · , · cot⁻¹</dt><dd>Brackets, percent, the comma between values, and cot⁻¹</dd>
+      <dt>S⇔D</dt><dd>After =, switch between fraction and decimal. SHIFT switches mixed and improper fractions.</dd>
+      <dt>M+ · M−</dt><dd>Add or subtract the answer to memory M (running totals)</dd>
+      <dt>A B C D E F X Y M T</dt><dd>ALPHA with the key under each purple letter types that variable</dd>
+    </dl>
+    <h3>Number keys</h3>
+    <dl class="guide">
+      <dt>CONST · CONV · SI</dt><dd>Engineering and science constants, the unit converter, and SI prefixes (k = ᴇ3, M = ᴇ6, m = ᴇ-3 …)</dd>
+      <dt>Limit · ∞</dt><dd>lim(f, a): the value f(X) approaches as X → a (a can be ∞)</dd>
+      <dt>MATRIX · VECTOR</dt><dd>Edit matrices A, B (up to 4×4): +, −, ×, determinant, inverse, transpose, solve A·x = B. Vectors: dot, cross, length, angle.</dd>
+      <dt>FUNC</dt><dd>A table of values for f(X) and g(X) from a start to an end value</dd>
+      <dt>STAT</dt><dd>Mean, standard deviation, quartiles, sums. 2-VAR also gives the line of best fit y = a + bx and r.</dd>
+      <dt>CMPLX</dt><dd>Turns complex numbers on, sets a+bi or r∠θ answers, and has Arg, Conj, Real, Imag</dd>
+      <dt>DISTR</dt><dd>Normal, inverse normal, binomial and Poisson probabilities</dd>
+      <dt>nPr nCr GCD LCM</dt><dd>Permutations, combinations, greatest common divisor, least common multiple</dd>
+      <dt>Pol · Rec</dt><dd>Pol(Δx, Δy) gives distance and angle. Rec(distance, angle) gives Δx and Δy (surveying). Answers go into X and Y.</dd>
+      <dt>Ceil · Floor</dt><dd>Round up or down to a whole number</dd>
+      <dt>COPY · PASTE</dt><dd>Copy the answer, then paste it into a later calculation</dd>
+      <dt>Ran# · RanInt</dt><dd>Random number from 0 to 1, or a random whole number RanInt(a, b)</dd>
+      <dt>Exp · π · e</dt><dd>2.5 Exp 3 = 2500. SHIFT gives π, ALPHA gives e.</dd>
+      <dt>Ans · PreAns</dt><dd>The last answer and the one before it</dd>
+      <dt>History · CLR ALL</dt><dd>List of past answers. CLR ALL clears memory, variables and history.</dd>
+    </dl>
+  </div>
+</div>
+<div class="sheet" id="eqnSheet" hidden>
+  <div class="card" role="dialog" aria-label="Equation solver">
+    <div class="card-head"><h2>EQN · equations</h2><button class="close" data-close>Done</button></div>
+    <div class="seg" id="eqnType" style="grid-template-columns:repeat(3,minmax(0,1fr))"><button data-t="q" class="on">Quadratic</button><button data-t="c">Cubic</button><button data-t="l2">2 unknowns</button><button data-t="l3">3 unknowns</button><button data-t="iq">Inequality x²</button><button data-t="ic">Inequality x³</button></div>
+    <p class="hint" id="eqnForm"></p>
+    <div id="eqnIn" style="display:flex;flex-direction:column;gap:8px"></div>
+    <div class="result"><div class="eqres" id="eqnOut"></div></div>
+  </div>
+</div>
+<div class="sheet" id="ftHelpSheet" hidden>
+  <div class="card" role="dialog" aria-label="How to use feet and inches">
+    <div class="card-head"><h2>How to use feet and inches</h2><button class="close" data-close>Done</button></div>
+    <dl class="guide">
+      <dt>65 ft 2 3/8</dt><dd>Press 6 5, ft, 2, then tap 3/8 in the fraction row</dd>
+      <dt>65 ft</dt><dd>Just press 6 5. A number on its own is feet.</dd>
+      <dt>7 1/2 in</dt><dd>Press 7, then tap 1/2. A number followed by a fraction is inches.</dd>
+      <dt>9 in</dt><dd>Press 9, in</dd>
+      <dt>1/16 fractions</dt><dd>Tap “16ths” at the end of the fraction row</dd>
+      <dt>+ − × ÷ =</dt><dd>Work like a site calculator, left to right. Every step stays on the tape above.</dd>
+      <dt>× 3, ÷ 4</dt><dd>After × or ÷ a plain number is a multiplier. Press ft or in after it to multiply two lengths (area) or three (volume).</dd>
+      <dt>20 ÷ 2 6</dt><dd>Length ÷ length tells you how many pieces fit (here 8)</dd>
+      <dt>⌫</dt><dd>Deletes the last digit. On an empty line it brings back the last entry to fix it.</dd>
+      <dt>Type</dt><dd>Use the phone keyboard, Revit style: 65 2 3/8 means 65 ft 2 3/8 in</dd>
+    </dl>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+
+const $=s=>document.querySelector(s);
+const store={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+let toastT;function toast(m){const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,2200)}
+
+/* ---------- number formatting ---------- */
+function fmt(x,group=true){
+  if(typeof x!=='number'||isNaN(x))return 'Not a number';
+  if(!isFinite(x))return x>0?'∞':'−∞';
+  if(x===0)return '0';
+  const a=Math.abs(x);
+  if(a>=1e15||a<1e-7){return x.toExponential(9).replace(/\.?0+e/,'e').replace('e+','×10^').replace('e-','×10^-')}
+  const r=parseFloat(x.toPrecision(12));
+  return group?r.toLocaleString('en-US',{maximumFractionDigits:10}):String(r);
+}
+const SUP={'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','-':'⁻'};
+const sup=s=>s.replace(/×10\^(-?\d+)/,(m,d)=>'×10'+[...d].map(c=>SUP[c]).join(''));
+const fmtD=x=>sup(fmt(x));
+
+/* ---------- tabs ---------- */
+const TABS=['calc','units','feet'];
+function showTab(){
+  const t=TABS.includes(location.hash.slice(1))?location.hash.slice(1):'calc';
+  TABS.forEach(id=>{$('#'+id).hidden=id!==t});
+  document.querySelectorAll('nav a').forEach(a=>{if(a.dataset.tab===t)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
+}
+addEventListener('hashchange',showTab);
+
+/* ================= SCIENTIFIC ENGINE ================= */
+let ang=store.get('ang','DEG');
+const cfg=Object.assign({cmplx:false,disp:'norm',dig:4,frac:'auto',polar:false},store.get('cfg',{}));
+const saveCfg=()=>store.set('cfg',cfg);
+const VARN=['A','B','C','D','E','F','X','Y','M','T'];
+let vars=Object.assign(Object.fromEntries(VARN.map(v=>[v,0])),store.get('vars',{}));
+let ans=store.get('ans',0),preAns=store.get('preAns',0);
+const saveVars=()=>{store.set('vars',vars);store.set('ans',ans);store.set('preAns',preAns)};
+const toR=x=>ang==='DEG'?x*Math.PI/180:ang==='GRA'?x*Math.PI/200:x;
+const fromR=x=>ang==='DEG'?x*180/Math.PI:ang==='GRA'?x*200/Math.PI:x;
+const angU=()=>ang==='DEG'?'°':ang==='GRA'?'ᵍ':' rad';
+const clean=x=>Math.abs(x)<1e-13?0:x;
+const r10=x=>{if(!isFinite(x))return x;if(Math.abs(x)<1e-11)return 0;return parseFloat(x.toPrecision(10))};
+const Z0='A fraction cannot have 0 at the bottom';
+
+/* ---- complex numbers ---- */
+const NEEDC='The answer is not a real number. Turn on CMPLX (SHIFT 2 or MODE) to get complex answers.';
+const isC=v=>v!==null&&typeof v==='object';
+function C(re,im){const s=Math.max(Math.abs(re),Math.abs(im));if(im===0||Math.abs(im)<=1e-13*s)return re;if(Math.abs(re)<=1e-13*s)re=0;return{re,im}}
+const Re=v=>isC(v)?v.re:v, Im=v=>isC(v)?v.im:0;
+const rl=(v,w)=>{if(isC(v))throw Error((w||'This')+' works with real numbers only');return v};
+const asInt=(x,w)=>{x=rl(x,w);const r=Math.round(x);if(Math.abs(x-r)>1e-9)throw Error(w+' needs whole numbers');return r};
+const cadd=(a,b)=>isC(a)||isC(b)?C(Re(a)+Re(b),Im(a)+Im(b)):a+b;
+const csub=(a,b)=>isC(a)||isC(b)?C(Re(a)-Re(b),Im(a)-Im(b)):a-b;
+const cneg=a=>isC(a)?C(-a.re,-a.im):-a;
+const cmul=(a,b)=>{if(!isC(a)&&!isC(b))return a*b;const ar=Re(a),ai=Im(a),br=Re(b),bi=Im(b);return C(ar*br-ai*bi,ar*bi+ai*br)};
+const cdiv=(a,b)=>{if(!isC(a)&&!isC(b)){if(b===0)throw Error('Cannot divide by zero');return a/b}const br=Re(b),bi=Im(b),d=br*br+bi*bi;if(d===0)throw Error('Cannot divide by zero');const ar=Re(a),ai=Im(a);return C((ar*br+ai*bi)/d,(ai*br-ar*bi)/d)};
+const cabs=a=>isC(a)?Math.hypot(a.re,a.im):Math.abs(a);
+const carg=a=>Math.atan2(Im(a),Re(a));
+const cexp=a=>{if(!isC(a))return Math.exp(a);const m=Math.exp(a.re);return C(m*Math.cos(a.im),m*Math.sin(a.im))};
+function cln(a){if(!isC(a)){if(a>0)return Math.log(a);if(a===0)throw Error('ln and log of 0 are undefined');if(!cfg.cmplx)throw Error(NEEDC)}return C(Math.log(cabs(a)),carg(a))}
+function csqrt(a){if(!isC(a)){if(a>=0)return Math.sqrt(a);if(!cfg.cmplx)throw Error(NEEDC);return C(0,Math.sqrt(-a))}const r=Math.sqrt(cabs(a)),t=carg(a)/2;return C(r*Math.cos(t),r*Math.sin(t))}
+function cpow(a,b){
+  if(!isC(a)&&!isC(b)){
+    if(a===0&&b<0)throw Error('Cannot divide by zero');
+    const r=Math.pow(a,b);if(!isNaN(r))return r;
+    if(a<0){const f=toFrac(b);if(f&&f[1]%2===1&&f[1]<1000){const v=Math.pow(-a,b);return Math.abs(f[0])%2===0?v:-v}if(!cfg.cmplx)throw Error(NEEDC)}
+    else return r;
+  }
+  if(!isC(b)&&Number.isInteger(b)&&Math.abs(b)<=1024){let r=1,base=a,n=Math.abs(b);while(n){if(n%2)r=cmul(r,base);base=cmul(base,base);n=Math.floor(n/2)}return b<0?cdiv(1,r):r}
+  if(cabs(a)===0)return 0;
+  return cexp(cmul(b,cln(a)));
+}
+
+/* ---- tokenizer ---- */
+const REPL=[['sinh⁻¹','asinh'],['cosh⁻¹','acosh'],['tanh⁻¹','atanh'],['sin⁻¹','asin'],['cos⁻¹','acos'],['tan⁻¹','atan'],['cot⁻¹','acot'],['⁻¹','^(-1)'],['²','^2'],['³','^3'],['×','*'],['÷R','¦'],['÷','/'],['−','-'],['–','-'],['π','pi'],['ʸ√','root'],['ˣ√','root'],['√','sqrt'],['∛','cbrt'],['∫','integ'],['d/dx','deriv'],['Σ','sum'],['Π','prod'],['∞','inf'],['logₓ','logb'],[';',','],['<=','≤'],['>=','≥']];
+const NAMES=['preans','ranint','ran#','asinh','acosh','atanh','floor','deriv','integ','sinh','cosh','tanh','asin','acos','atan','acot','sqrt','cbrt','root','logb','ceil','prod','real','imag','conj','sin','cos','tan','cot','sec','csc','abs','exp','log','ncr','npr','gcd','lcm','mod','pol','rec','sum','lim','int','ans','inf','arg','ln','pi'];
+function tokenize(s){
+  for(const[a,b]of REPL)s=s.split(a).join(b);
+  const t=[];let i=0;
+  while(i<s.length){
+    const c=s[i],rest=s.slice(i);
+    if(/\s/.test(c)){i++;continue}
+    if(/[0-9.]/.test(c)){
+      let m=rest.match(/^(\d+)\s+(\d+)⁄(\d+)/);
+      if(m){if(+m[3]===0)throw Error(Z0);t.push({k:'n',v:+m[1]+m[2]/m[3]});i+=m[0].length;continue}
+      m=rest.match(/^(\d*)\.(\d*)‾(\d+)/);
+      if(m){const k=m[2].length,r=m[3].length;t.push({k:'n',v:(+m[1]||0)+(k?+m[2]/10**k:0)+ +m[3]/(10**k*(10**r-1))});i+=m[0].length;continue}
+      m=rest.match(/^(\d+\.?\d*|\.\d+)⁄(\d+\.?\d*|\.\d+)/);
+      if(m){if(+m[2]===0)throw Error(Z0);t.push({k:'n',v:m[1]/m[2]});i+=m[0].length;continue}
+      m=rest.match(/^(\d+\.?\d*|\.\d+)°(?:\s*(\d+\.?\d*|\.\d+)[′'])?(?:\s*(\d+\.?\d*|\.\d+)[″"])?/);
+      if(m){t.push({k:'n',v:+m[1]+(+(m[2]||0))/60+(+(m[3]||0))/3600});i+=m[0].length;continue}
+      m=rest.match(/^(\d+\.?\d*|\.\d+)(?:ᴇ([+-]?\d+))?/);
+      if(!m)throw Error('Check the number near “'+rest.slice(0,4)+'”');
+      const nx=rest[m[0].length];
+      if(nx==='ᴇ')throw Error('Put a whole number after Exp');
+      if(nx==='‾')throw Error('The recurring bar goes after the decimal point, e.g. 0.1‾6 for 0.1666…');
+      t.push({k:'n',v:parseFloat(m[1]+(m[2]?'e'+m[2]:''))});i+=m[0].length;continue}
+    if(c==='‾')throw Error('Type the recurring bar after a decimal number, e.g. 0.‾3 for 0.333…');
+    if(c==='ᴇ'){const m=rest.match(/^ᴇ([+-]?\d+)/);if(!m)throw Error('Put a whole number after Exp');t.push({k:'n',v:Math.pow(10,+m[1])});i+=m[0].length;continue}
+    if(c==='¦'){t.push({k:'divr'});i++;continue}
+    if(c==='⁄'){t.push({k:'/'});i++;continue}
+    if(c==='∠'){t.push({k:'∠'});i++;continue}
+    if('<>≤≥≠'.includes(c)){t.push({k:'cmp',v:c});i++;continue}
+    if(/[a-z#]/i.test(c)){
+      const low=rest.toLowerCase(),n=NAMES.find(n=>low.startsWith(n));
+      if(n){t.push({k:'id',v:n});i+=n.length;continue}
+      if(c==='e'){t.push({k:'id',v:'e'});i++;continue}
+      if(c==='i'){t.push({k:'id',v:'i'});i++;continue}
+      if(VARN.includes(c)){t.push({k:'v',v:c});i++;continue}
+      if('xytm'.includes(c)){t.push({k:'v',v:c.toUpperCase()});i++;continue}
+      throw Error('Unknown name “'+rest.match(/^[a-z#]+/i)[0]+'”');
+    }
+    if(c==='=')throw Error('This has an = sign. Use SOLVE (SHIFT CALC) to find X, or CALC to work it out.');
+    if('+-*/^()!%,'.includes(c)){t.push({k:c});i++;continue}
+    throw Error('Unexpected “'+c+'”');
+  }
+  return t;
+}
+
+/* ---- numeric helpers ---- */
+const child=(E,x)=>({v:Object.assign({},E.v,{X:x}),note:''});
+const f1=(nm,fn)=>({n:[1],f:(a,E)=>fn(rl(a[0](E),nm))});
+const f2=(nm,fn)=>({n:[2],f:(a,E)=>fn(rl(a[0](E),nm),rl(a[1](E),nm))});
+const c1=fn=>({n:[1],f:(a,E)=>fn(a[0](E))});
+function gcd2(a,b){a=Math.abs(a);b=Math.abs(b);while(b){[a,b]=[b,a%b]}return a}
+function integrate(g,a,b){
+  if(!isFinite(a)||!isFinite(b))throw Error('Integration limits must be finite');
+  if(a===b)return 0;
+  let ev=0;const S=(a,b,fa,fm,fb)=>(b-a)/6*(fa+4*fm+fb);
+  function rec(a,b,fa,fm,fb,w,eps,d){const m=(a+b)/2,l=(a+m)/2,r=(m+b)/2,fl=g(l),fr=g(r);ev+=2;if(ev>3e5)throw Error('The integral is taking too long. Try a smaller range.');
+    const L=S(a,m,fa,fl,fm),R=S(m,b,fm,fr,fb),df=L+R-w;if(d<=0||Math.abs(df)<=15*eps)return L+R+df/15;return rec(a,m,fa,fl,fm,L,eps/2,d-1)+rec(m,b,fm,fr,fb,R,eps/2,d-1)}
+  const N=8,h=(b-a)/N;let tot=0;
+  for(let k=0;k<N;k++){const x0=a+k*h,x1=x0+h,f0=g(x0),f1=g(x1),fm=g((x0+x1)/2);tot+=rec(x0,x1,f0,fm,f1,S(x0,x1,f0,fm,f1),1e-11,40)}
+  if(!isFinite(tot))throw Error('Could not integrate. The function may be undefined somewhere in this range.');
+  return tot;
+}
+function limit(g,a){
+  if(!isFinite(a)){const s=Math.sign(a),v=[1e5,1e7,1e9].map(t=>g(s*t));
+    if(Math.abs(v[2])<1e-6&&Math.abs(v[2])<=Math.abs(v[1])&&Math.abs(v[1])<=Math.abs(v[0]))return 0;
+    if(Math.abs(v[2]-v[1])<=1e-6*Math.max(1,Math.abs(v[2])))return (100*v[2]-v[1])/99;
+    if(Math.abs(v[2])>Math.abs(v[1])&&Math.abs(v[1])>Math.abs(v[0])&&Math.abs(v[2])>1e6)return Math.sign(v[2])*Infinity;
+    throw Error('The limit does not settle to one value');}
+  const sc=Math.max(1,Math.abs(a)),h=1e-3*sc,A=h=>(g(a-h)+g(a+h))/2;
+  const L=g(a-1e-7*sc),R=g(a+1e-7*sc);
+  if(!isFinite(L)||!isFinite(R))throw Error('The limit is not a finite number');
+  const lim=(100*A(h/10)-A(h))/99;
+  if(Math.abs(L-R)>1e-3*Math.max(1,Math.abs(lim)))throw Error(`Left and right limits differ (${fmt(r10(L))} and ${fmt(r10(R))})`);
+  return lim;
+}
+const trigDen=(v,w)=>{if(Math.abs(v)<1e-15)throw Error(w+' is undefined at this angle');return v};
+const FN={
+  sin:f1('sin',x=>clean(Math.sin(toR(x)))),cos:f1('cos',x=>clean(Math.cos(toR(x)))),
+  tan:f1('tan',x=>clean(Math.sin(toR(x))/trigDen(Math.cos(toR(x)),'tan'))),
+  cot:f1('cot',x=>clean(Math.cos(toR(x))/trigDen(Math.sin(toR(x)),'cot'))),
+  sec:f1('sec',x=>clean(1/trigDen(clean(Math.cos(toR(x))),'sec'))),
+  csc:f1('csc',x=>clean(1/trigDen(clean(Math.sin(toR(x))),'csc'))),
+  asin:f1('sin⁻¹',x=>{if(x<-1||x>1)throw Error('sin⁻¹ needs a value from −1 to 1');return fromR(Math.asin(x))}),
+  acos:f1('cos⁻¹',x=>{if(x<-1||x>1)throw Error('cos⁻¹ needs a value from −1 to 1');return fromR(Math.acos(x))}),
+  atan:f1('tan⁻¹',x=>fromR(Math.atan(x))),
+  acot:f1('cot⁻¹',x=>fromR(x===0?Math.PI/2:x>0?Math.atan(1/x):Math.PI+Math.atan(1/x))),
+  sinh:f1('sinh',Math.sinh),cosh:f1('cosh',Math.cosh),tanh:f1('tanh',Math.tanh),asinh:f1('sinh⁻¹',Math.asinh),
+  acosh:f1('cosh⁻¹',x=>{if(x<1)throw Error('cosh⁻¹ needs a value of 1 or more');return Math.acosh(x)}),
+  atanh:f1('tanh⁻¹',x=>{if(x<=-1||x>=1)throw Error('tanh⁻¹ needs a value between −1 and 1');return Math.atanh(x)}),
+  sqrt:c1(csqrt),cbrt:f1('∛',Math.cbrt),
+  root:{n:[2],f:(a,E)=>{const n=rl(a[0](E),'ˣ√y'),x=a[1](E);if(n===0)throw Error('0th root is undefined');if(!isC(x)&&x<0&&Number.isInteger(n)&&Math.abs(n)%2===1)return -Math.pow(-x,1/n);return cpow(x,1/n)}},
+  abs:c1(cabs),exp:c1(cexp),ln:c1(cln),
+  log:{n:[1,2],f:(a,E)=>{if(a.length===2)return FN.logb.f(a,E);const x=a[0](E);if(!isC(x)&&x>0)return Math.log10(x);return cdiv(cln(x),Math.LN10)}},
+  logb:f2('logₓy',(b,x)=>{if(b<=0||b===1||x<=0)throw Error('logₓy needs a positive base (not 1) and a positive value');return clean(Math.log(x)/Math.log(b))}),
+  int:f1('Int',Math.trunc),ceil:f1('Ceil',Math.ceil),floor:f1('Floor',Math.floor),
+  npr:f2('nPr',(n,r)=>{n=asInt(n,'nPr');r=asInt(r,'nPr');if(r<0||n<0||r>n)throw Error('nPr needs 0 ≤ r ≤ n');let p=1;for(let i=n-r+1;i<=n;i++)p*=i;return p}),
+  ncr:f2('nCr',(n,r)=>{n=asInt(n,'nCr');r=asInt(r,'nCr');if(r<0||n<0||r>n)throw Error('nCr needs 0 ≤ r ≤ n');r=Math.min(r,n-r);let c=1;for(let i=1;i<=r;i++)c=c*(n-r+i)/i;return Math.round(c)}),
+  gcd:f2('GCD',(a,b)=>gcd2(asInt(a,'GCD'),asInt(b,'GCD'))),
+  lcm:f2('LCM',(a,b)=>{a=asInt(a,'LCM');b=asInt(b,'LCM');if(!a||!b)return 0;return Math.abs(a*b)/gcd2(a,b)}),
+  mod:f2('mod',(a,b)=>{if(b===0)throw Error('mod by zero');return clean(a-b*Math.floor(a/b))}),
+  ranint:f2('RanInt',(a,b)=>{a=Math.ceil(a);b=Math.floor(b);if(a>b)throw Error('RanInt needs the first number to be smaller');return a+Math.floor(Math.random()*(b-a+1))}),
+  pol:{n:[2],f:(a,E)=>{const x=rl(a[0](E),'Pol'),y=rl(a[1](E),'Pol'),r=Math.hypot(x,y),t=fromR(Math.atan2(y,x));E.v.X=r;E.v.Y=t;E.note=`r = ${fmtD(r)}   θ = ${fmtD(t)}${angU()}   (in X, Y)`;return r}},
+  rec:{n:[2],f:(a,E)=>{const r=rl(a[0](E),'Rec'),t=rl(a[1](E),'Rec'),x=clean(r*Math.cos(toR(t))),y=clean(r*Math.sin(toR(t)));E.v.X=x;E.v.Y=y;E.note=`x = ${fmtD(x)}   y = ${fmtD(y)}   (in X, Y)`;return x}},
+  integ:{n:[3],f:(a,E)=>r10(integrate(t=>rl(a[0](child(E,t)),'∫dx'),rl(a[1](E),'∫dx'),rl(a[2](E),'∫dx')))},
+  deriv:{n:[2],f:(a,E)=>{const x=rl(a[1](E),'d/dx'),h=1e-3*Math.max(1,Math.abs(x)),g=t=>rl(a[0](child(E,t)),'d/dx');const d=(-g(x+2*h)+8*g(x+h)-8*g(x-h)+g(x-2*h))/(12*h);if(!isFinite(d))throw Error('The derivative is not defined at this point');return r10(d)}},
+  sum:{n:[3],f:(a,E)=>{const lo=asInt(a[1](E),'Σ'),hi=asInt(a[2](E),'Σ');if(hi-lo>1e6)throw Error('Σ is limited to a million terms');let s=0;const c=child(E,0);for(let k=lo;k<=hi;k++){c.v.X=k;s=cadd(s,a[0](c))}return s}},
+  prod:{n:[3],f:(a,E)=>{const lo=asInt(a[1](E),'Π'),hi=asInt(a[2](E),'Π');if(hi-lo>1e6)throw Error('Π is limited to a million terms');let s=1;const c=child(E,0);for(let k=lo;k<=hi;k++){c.v.X=k;s=cmul(s,a[0](c))}return s}},
+  lim:{n:[2],f:(a,E)=>r10(limit(t=>rl(a[0](child(E,t)),'Limit'),rl(a[1](E),'Limit')))},
+  arg:c1(v=>fromR(carg(v))),conj:c1(v=>isC(v)?C(v.re,-v.im):v),real:c1(Re),imag:c1(Im)
+};
+const CONSTV={pi:()=>Math.PI,e:()=>Math.E,inf:()=>Infinity,ans:()=>ans,preans:()=>preAns,'ran#':()=>Math.round(Math.random()*1000)/1000,i:()=>({re:0,im:1})};
+const LABEL={npr:'nPr',ncr:'nCr',gcd:'GCD',lcm:'LCM',pol:'Pol',rec:'Rec',integ:'∫dx',deriv:'d/dx',sum:'Σ',prod:'Π',lim:'Limit',logb:'logₓy',root:'ˣ√y',mod:'mod',ranint:'RanInt'};
+
+/* ---- parser ---- */
+function compile(src){
+  const tk=tokenize(src);if(!tk.length)throw Error('Type something to calculate');
+  let p=0,isBool=false;const peek=()=>tk[p],eat=k=>{if(tk[p]&&tk[p].k===k){p++;return true}return false};
+  function rel(){const a=expr(),t=peek();if(!(t&&t.k==='cmp'))return a;p++;const b=expr(),op=t.v;isBool=true;
+    return E=>{const x=rl(a(E),'A comparison'),y=rl(b(E),'A comparison'),eq=Math.abs(x-y)<=1e-12*Math.max(1,Math.abs(x),Math.abs(y));
+      return (op==='<'?x<y&&!eq:op==='>'?x>y&&!eq:op==='≤'?x<y||eq:op==='≥'?x>y||eq:!eq)?1:0}}
+  function expr(){let a=term();for(;;){if(eat('+')){const l=a,r=term();a=E=>cadd(l(E),r(E))}else if(eat('-')){const l=a,r=term();a=E=>csub(l(E),r(E))}else return a}}
+  function term(){let a=unary();for(;;){
+    if(eat('*')){const l=a,r=unary();a=E=>cmul(l(E),r(E))}
+    else if(eat('/')){const l=a,r=unary();a=E=>cdiv(l(E),r(E))}
+    else if(eat('∠')){const l=a,r=unary();a=E=>{const m=rl(l(E),'∠'),t=toR(rl(r(E),'∠'));return C(m*Math.cos(t),m*Math.sin(t))}}
+    else if(eat('divr')){const l=a,r=unary();a=E=>{const x=asInt(l(E),'÷R'),y=asInt(r(E),'÷R');if(!y)throw Error('Cannot divide by zero');const q=Math.trunc(x/y);E.note=`Q = ${q}   R = ${x-q*y}`;return q}}
+    else{const t=peek();if(t&&(t.k==='n'||t.k==='id'||t.k==='v'||t.k==='(')){const l=a,r=unary();a=E=>cmul(l(E),r(E))}else return a}}}
+  function unary(){if(eat('-')){const u=unary();return E=>cneg(u(E))}if(eat('+'))return unary();return power()}
+  function power(){const b=postfix();if(eat('^')){const e=unary();return E=>cpow(b(E),e(E))}return b}
+  function postfix(){let v=primary();for(;;){
+    if(eat('!')){const u=v;v=E=>{const n=asInt(u(E),'x!');if(n<0)throw Error('x! needs a number ≥ 0');if(n>170)return Infinity;let r=1;for(let i=2;i<=n;i++)r*=i;return r}}
+    else if(eat('%')){const u=v;v=E=>cdiv(u(E),100)}else return v}}
+  function primary(){
+    const t=tk[p++];if(!t)throw Error('The expression is incomplete');
+    if(t.k==='n'){const c=t.v;return()=>c}
+    if(t.k==='v'){const n=t.v;return E=>E.v[n]}
+    if(t.k==='('){const v=expr();eat(')');return v}
+    if(t.k==='id'){
+      if(CONSTV[t.v])return CONSTV[t.v];
+      const fd=FN[t.v];let args;
+      if(eat('(')){args=[];if(!eat(')')){for(;;){args.push(expr());if(eat(','))continue;eat(')');break}}}
+      else args=[power()];
+      if(!fd.n.includes(args.length)){const nm=LABEL[t.v]||t.v;throw Error(`${nm} needs ${fd.n.join(' or ')} value${fd.n[0]>1?'s':''} separated by commas (SHIFT ")" types a comma)`)}
+      return E=>fd.f(args,E);
+    }
+    if(t.k===')')throw Error('There is an extra ")"');
+    if(t.k===',')throw Error('A comma is only used inside functions like GCD( , )');
+    if(t.k==='cmp')throw Error('Put a value on both sides of '+t.v);
+    throw Error('Something is missing before “'+(t.k==='divr'?'÷R':t.k)+'”');
+  }
+  const f=rel();
+  if(p<tk.length){const t=tk[p];throw Error(t.k===')'?'There is an extra ")"':t.k===','?'A comma is only used inside functions like GCD( , )':t.k==='cmp'?'Use only one comparison sign':'Check the expression near “'+(t.v??t.k)+'”')}
+  f.isBool=isBool;return f;
+}
+function run(src,commit){
+  const f=compile(src),E={v:commit?vars:{...vars},note:''},r=f(E);
+  if(isC(r)){if(![r.re,r.im].every(Number.isFinite))throw Error('The result is too large or not a number')}
+  else if(typeof r!=='number'||isNaN(r))throw Error('The result is not a real number');
+  return{r,note:E.note,bool:f.isBool};
+}
+function solveFor(src){
+  const parts=src.split('=');if(parts.length>2)throw Error('Use only one = sign');
+  if(!/[Xx]/.test(src))throw Error('SOLVE finds X. Put X in the equation (ALPHA then ")" types X).');
+  const L=compile(parts[0]),R=parts.length===2&&parts[1].trim()?compile(parts[1]):()=>0;
+  const base={...vars},f=t=>{const E={v:{...base,X:t},note:''};return rl(csub(L(E),R(E)),'SOLVE')};
+  const safe=t=>{try{return f(t)}catch(e){return NaN}};
+  for(const s0 of [Re(vars.X)||0,1,-1,10,-10,0.5,100,-100,1000]){let x=s0;
+    for(let i=0;i<120;i++){const fx=safe(x);if(!isFinite(fx))break;
+      if(Math.abs(fx)<1e-13)return fin(x);
+      const h=1e-6*Math.max(1,Math.abs(x)),d=(safe(x+h)-safe(x-h))/(2*h);if(!isFinite(d)||d===0)break;
+      const nx=x-fx/d;if(!isFinite(nx))break;
+      if(Math.abs(nx-x)<1e-13*Math.max(1,Math.abs(x))){if(Math.abs(safe(nx))<1e-7*Math.max(1,Math.abs(nx)))return fin(nx);break}
+      x=nx}}
+  throw Error('No solution found. Store a starting guess in X (RCL) and try again.');
+  function fin(x){const r=Math.round(x);if(Math.abs(x-r)<1e-9)x=r;else x=parseFloat(x.toPrecision(12));return{x,res:clean(r10(safe(x)))}}
+}
+
+/* ---- answer formats ---- */
+function toFrac(x){if(!isFinite(x))return null;if(Number.isInteger(x))return[x,1];
+  let h1=1,h0=0,k1=0,k0=1,b=x;
+  for(let i=0;i<40;i++){const a=Math.floor(b);[h1,h0]=[a*h1+h0,h1];[k1,k0]=[a*k1+k0,k1];if(Math.abs(x-h1/k1)<1e-12*Math.max(1,Math.abs(x)))break;if(b-a<1e-15)break;b=1/(b-a)}
+  if(k1>1e7||Math.abs(x-h1/k1)>1e-10*Math.max(1,Math.abs(x)))return null;return[h1,k1]}
+function fracStr(f,mixed){const[n,d]=f;if(d===1)return String(n).replace('-','−');const s=n<0?'−':'',a=Math.abs(n);if(mixed&&a>d){const w=Math.floor(a/d);return `${s}${w} ${a-w*d}/${d}`}return `${s}${a}/${d}`}
+function recurStr(x){const f=toFrac(x);if(!f||f[1]===1||f[1]>1e5)return null;const p=Math.abs(f[0]),q=f[1],ip=Math.floor(p/q);let r=p%q,digs='';const seen=new Map();
+  while(r&&!seen.has(r)&&digs.length<40){seen.set(r,digs.length);r*=10;digs+=Math.floor(r/q);r%=q}
+  if(!r||!seen.has(r))return null;const st=seen.get(r);
+  return (f[0]<0?'−':'')+ip+'.'+digs.slice(0,st)+[...digs.slice(st)].map(d=>d+'̅').join('')}
+function toDMS(x){const neg=x<0;let a=Math.abs(x),d=Math.floor(a),m=Math.floor((a-d)*60),s=Math.round(((a-d)*60-m)*60*100)/100;
+  if(s>=60){s-=60;m++}if(m>=60){m-=60;d++}return `${neg?'−':''}${d}°${m}′${s}″`}
+function factorize(n){
+  if(!Number.isInteger(n)||n<2||n>1e15)throw Error('FACT needs a whole number from 2 to 10¹⁵');
+  const f=[];const push=p=>{const l=f[f.length-1];if(l&&l[0]===p)l[1]++;else f.push([p,1])};
+  for(const p of[2,3]){while(n%p===0){push(p);n/=p}}
+  for(let i=5;i*i<=n;i+=6){while(n%i===0){push(i);n/=i}while(n%(i+2)===0){push(i+2);n/=i+2}}
+  if(n>1)push(n);
+  return f.map(([p,e])=>p+(e>1?[...String(e)].map(c=>SUP[c]).join(''):'')).join(' × ');
+}
+const supN=n=>[...String(n)].map(c=>SUP[c]).join('');
+function engStr(x,shift){if(x===0)return '0';const e=Math.floor(Math.log10(Math.abs(x))/3)*3+3*shift;return fmt(parseFloat((x/Math.pow(10,e)).toPrecision(12)))+'×10'+supN(e)}
+function sciStr(x,n){if(x===0)return (0).toFixed(Math.max(0,n-1))+'×10⁰';const[m,e]=x.toExponential(Math.max(0,n-1)).split('e');return m.replace('-','−')+'×10'+supN(+e)}
+function fmtMain(x){
+  if(typeof x!=='number'||!isFinite(x))return fmtD(x);
+  if(cfg.disp==='fix'){if(Math.abs(x)>=1e15)return sciStr(x,10);return x.toLocaleString('en-US',{minimumFractionDigits:cfg.dig,maximumFractionDigits:cfg.dig}).replace('-','−')}
+  if(cfg.disp==='sci')return sciStr(x,cfg.dig);
+  return fmtD(x).replace(/^-/,'−');
+}
+function cxStr(v,polar=cfg.polar){if(!isC(v))return fmtMain(v);
+  if(polar)return `${fmtMain(r10(cabs(v)))}∠${fmtMain(r10(fromR(carg(v))))}${ang==='DEG'?'°':ang==='GRA'?'ᵍ':''}`;
+  const a=r10(v.re),b=r10(v.im),bs=Math.abs(b)===1?'':fmtMain(Math.abs(b));
+  if(a===0)return (b<0?'−':'')+bs+'i';
+  return `${fmtMain(a)} ${b<0?'−':'+'} ${bs}i`}
+const fmtVal=(v,b)=>b?(v?'True':'False'):isC(v)?cxStr(v):fmtMain(v);
+const exprOf=v=>isC(v)?`(${v.re}${v.im<0?'−':'+'}${Math.abs(v.im)}i)`:String(v).replace('e+','ᴇ').replace('e-','ᴇ-').replace('e','ᴇ');
+
+/* ---- statistics & distributions ---- */
+function cnd(x){const a=Math.abs(x);let c;
+  if(a>37)c=0;else{const e=Math.exp(-a*a/2);
+    if(a<7.07106781186547){let b=3.52624965998911e-02*a+0.700383064443688;b=b*a+6.37396220353165;b=b*a+33.912866078383;b=b*a+112.079291497871;b=b*a+221.213596169931;b=b*a+220.206867912376;c=e*b;
+      b=8.83883476483184e-02*a+1.75566716318264;b=b*a+16.064177579207;b=b*a+86.7807322029461;b=b*a+296.564248779674;b=b*a+637.333633378831;b=b*a+793.826512519948;b=b*a+440.413735824752;c/=b}
+    else{let b=a+0.65;b=a+4/b;b=a+3/b;b=a+2/b;b=a+1/b;c=e/b/2.506628274631}}
+  return x>0?1-c:c}
+const npdf=z=>Math.exp(-z*z/2)/Math.sqrt(2*Math.PI);
+function invNorm(p){if(p<=0||p>=1)throw Error('The area must be between 0 and 1');
+  const a=[-3.969683028665376e+01,2.209460984245205e+02,-2.759285104469687e+02,1.383577518672690e+02,-3.066479806614716e+01,2.506628277459239e+00],
+  b=[-5.447609879822406e+01,1.615858368580409e+02,-1.556989798598866e+02,6.680131188771972e+01,-1.328068155288572e+01],
+  c=[-7.784894002430293e-03,-3.223964580411365e-01,-2.400758277161838e+00,-2.549732539343734e+00,4.374664141464968e+00,2.938163982698783e+00],
+  d=[7.784695709041462e-03,3.224671290700398e-01,2.445134137142996e+00,3.754408661907416e+00],pl=0.02425;let x,q,r;
+  if(p<pl){q=Math.sqrt(-2*Math.log(p));x=(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1)}
+  else if(p<=1-pl){q=p-0.5;r=q*q;x=(((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q/(((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1)}
+  else{q=Math.sqrt(-2*Math.log(1-p));x=-(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1)}
+  for(let i=0;i<3;i++){const e=cnd(x)-p;x-=e/npdf(x)}return x}
+function lgamma(z){if(z<0.5)return Math.log(Math.PI/Math.abs(Math.sin(Math.PI*z)))-lgamma(1-z);z-=1;
+  const g=7,k=[0.99999999999980993,676.5203681218851,-1259.1392167224028,771.32342877765313,-176.61502916214059,12.507343278686905,-0.13857109526572012,9.9843695780195716e-6,1.5056327351493116e-7];
+  let x=k[0];for(let i=1;i<9;i++)x+=k[i]/(z+i);const t=z+g+0.5;return 0.5*Math.log(2*Math.PI)+(z+0.5)*Math.log(t)-t+Math.log(x)}
+function binPmf(x,n,p){if(x<0||x>n||!Number.isInteger(x))return 0;if(p===0)return x===0?1:0;if(p===1)return x===n?1:0;
+  return Math.exp(lgamma(n+1)-lgamma(x+1)-lgamma(n-x+1)+x*Math.log(p)+(n-x)*Math.log(1-p))}
+function poiPmf(x,l){if(x<0||!Number.isInteger(x))return 0;return Math.exp(-l+x*Math.log(l)-lgamma(x+1))}
+function median(a){const n=a.length;if(!n)return NaN;const m=Math.floor(n/2);return n%2?a[m]:(a[m-1]+a[m])/2}
+function stats1(xs){const n=xs.length;if(!n)throw Error('Enter at least one value');const s=xs.slice().sort((a,b)=>a-b),sx=xs.reduce((a,b)=>a+b,0),sx2=xs.reduce((a,b)=>a+b*b,0),mean=sx/n,ss=xs.reduce((a,b)=>a+(b-mean)**2,0),h=Math.floor(n/2);
+  return{n,mean,sx,sx2,pop:Math.sqrt(ss/n),samp:n>1?Math.sqrt(ss/(n-1)):NaN,min:s[0],q1:n>1?median(s.slice(0,h)):s[0],med:median(s),q3:n>1?median(s.slice(n-h)):s[0],max:s[n-1]}}
+function stats2(xs,ys){const a=stats1(xs),b=stats1(ys),n=xs.length;if(n<2)throw Error('Regression needs at least two (x, y) pairs');
+  const sxy=xs.reduce((s,x,i)=>s+x*ys[i],0),Sxy=sxy-n*a.mean*b.mean,Sxx=a.sx2-n*a.mean**2,Syy=b.sx2-n*b.mean**2;
+  if(Sxx===0)throw Error('All x values are the same, so no line can be fitted');
+  const B=Sxy/Sxx,A=b.mean-B*a.mean,r=Syy===0?1:Sxy/Math.sqrt(Sxx*Syy);return{x:a,y:b,sxy,A,B,r}}
+
+/* ================= SCIENTIFIC UI ================= */
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const UP=[
+  {m:'SHIFT',k:'shift',c:'shift'},{m:'ALPHA',k:'alpha',c:'alpha'},{m:'MODE',k:'mode'},{m:'2nd',k:'catalog',c:'it'},
+  {m:'CALC',k:'calc',s:['SOLVE','solve'],a:['=','ins:=']},{m:'∫dx',k:'ins:∫(',s:['d/dx','ins:d/dx('],a:[';','ins:; ']},
+  {m:'x⁻¹',k:'ins:⁻¹',s:['x!','ins:!'],a:['><=','cmp']},{m:'logₓy',k:'ins:logₓ(',s:['Σ','ins:Σ('],a:['Π','ins:Π(']},
+  {h:'<span class="stk"><b>x</b><b>y</b></span>',aria:'Fraction',k:'ins:⁄',s:['x y/z','ins: '],a:['÷R','ins:÷R']},
+  {m:'√x',k:'ins:√(',s:['∛x','ins:∛('],a:['mod','ins:mod(']},
+  {m:'x²',k:'ins:²',s:['x³','ins:³'],a:['0.‾3','recur']},
+  {m:'xʸ',k:'ins:^(',s:['ˣ√y','ins:ˣ√(']},
+  {m:'log',k:'ins:log(',s:['10ˣ','ins:10^(']},
+  {m:'ln',k:'ins:ln(',s:['eˣ','ins:e^('],a:['T','var:T']},
+  {m:'(−)',k:'ins:-',s:['∠','ins:∠'],a:['A','var:A']},
+  {m:'°′″',k:'dms',s:['FACT','fact'],a:['B','var:B']},
+  {m:'hyp',k:'hyp',s:['|x|','ins:Abs('],a:['C','var:C']},
+  {m:'sin',k:'trig:sin',s:['sin⁻¹','itrig:sin'],a:['D','var:D']},
+  {m:'cos',k:'trig:cos',s:['cos⁻¹','itrig:cos'],a:['E','var:E']},
+  {m:'tan',k:'trig:tan',s:['tan⁻¹','itrig:tan'],a:['F','var:F']},
+  {m:'RCL',k:'vars',s:['STO','sto'],a:['CLRv','clrv']},
+  {m:'ENG',k:'eng',s:['i','ins:i'],a:['cot','ins:cot(']},
+  {m:'(',k:'ins:(',s:['%','ins:%'],a:['cot⁻¹','ins:cot⁻¹(']},
+  {m:')',k:'ins:)',s:[',','ins:, '],a:['X','var:X']},
+  {m:'S⇔D',k:'sd',s:['a b/c⇔d/c','mixed'],a:['Y','var:Y']},
+  {m:'M+',k:'mplus',s:['M−','mminus'],a:['M','var:M']}
+];
+const NP=[
+  {m:'7',s:['CONST','const']},{m:'8',s:['CONV','conv'],a:['SI','si']},{m:'9',s:['Limit','ins:lim('],a:['∞','ins:∞']},{m:'⌫',k:'bs',c:'del',aria:'Delete'},{m:'AC',k:'ac',s:['CLR ALL','clrall'],c:'del'},
+  {m:'4',s:['MATRIX','matrix']},{m:'5',s:['VECTOR','vector']},{m:'6',s:['FUNC','func'],a:['HELP','help']},{m:'×',k:'ins:×',s:['nPr','ins:nPr('],a:['GCD','ins:GCD(']},{m:'÷',k:'ins:÷',s:['nCr','ins:nCr('],a:['LCM','ins:LCM(']},
+  {m:'1',s:['STAT','stat']},{m:'2',s:['CMPLX','cmplx']},{m:'3',s:['DISTR','distr']},{m:'+',k:'ins:+',s:['Pol','ins:Pol('],a:['Ceil','ins:Ceil(']},{m:'−',k:'ins:−',s:['Rec','ins:Rec('],a:['Floor','ins:Floor(']},
+  {m:'0',s:['COPY','copy'],a:['PASTE','paste']},{m:'.',s:['Ran#','ins:Ran#'],a:['RanInt','ins:RanInt(']},{m:'Exp',k:'ins:ᴇ',s:['π','ins:π'],a:['e','ins:e'],c:'small'},{m:'Ans',k:'ins:Ans',s:['PreAns','ins:PreAns'],c:'small'},{m:'=',k:'eq',s:['History','hist']}
+];
+const ALLK=[];
+const cellHTML=d=>{const i=ALLK.push(d)-1,s=d.s?d.s[0]:'',a=d.a?d.a[0]:'';
+  return `<div class="cell"><div class="lab${(s+a).length>8?' tight':''}">${s?`<span class="s">${s}</span>`:''}${a?`<span class="a">${a}</span>`:''}</div><button class="key ${d.c||''}" data-i="${i}" aria-label="${esc(d.aria||d.m)}">${d.h||d.m}</button></div>`};
+$('#fgrid').insertAdjacentHTML('beforeend',UP.map(cellHTML).join(''));
+$('#ngrid').innerHTML=NP.map(cellHTML).join('');
+
+const ex=$('#expr');
+let shift=false,alpha=false,hyp=false,sto=false,justEval=false,last=null,lastBool=false,note='',err='',mode='dec',engN=0,hIdx=-1;
+let hist=store.get('hist',[]),clip=store.get('clip','');
+const LAZY=/[∫Σ]|Π\(|d\/dx|lim\(|Ran|Pol\(|Rec\(|=/i;
+
+const curOf=el=>{const c=el._cur;return c==null||c>el.value.length?el.value.length:c};
+function setCur(el,c){el._cur=c;try{el.setSelectionRange(c,c)}catch(_){}}
+function ins(txt,el=ex){const s=curOf(el);el.value=el.value.slice(0,s)+txt+el.value.slice(s);setCur(el,s+txt.length)}
+function bs(el=ex){const s=curOf(el);if(!s)return;el.value=el.value.slice(0,s-1)+el.value.slice(s);setCur(el,s-1)}
+function setVal(el,v){el.value=v;el._cur=null}
+function startNew(txt){
+  if(!justEval)return;
+  justEval=false;mode='dec';note='';
+  setVal(ex,/^(\+|−|×|÷|\^|²|³|⁻¹|!|%|\/|⁄|∠)/.test(txt)?'Ans':'');
+}
+function resultText(){
+  if(last==null)return '';
+  if(lastBool)return last?'True':'False';
+  if(isC(last))return cxStr(last);
+  const f=(mode==='frac'||mode==='mixed')?toFrac(last):null;
+  if(f)return fracStr(f,mode==='mixed');
+  if(mode==='dms')return toDMS(last);
+  if(mode==='eng')return engStr(last,engN);
+  if(mode==='fact')return factorize(last);
+  return fmtMain(last);
+}
+function altNote(){
+  if(last==null||lastBool)return '';
+  if(isC(last))return '= '+cxStr(last,!cfg.polar);
+  const f=toFrac(last);
+  if(f&&(mode==='frac'||mode==='mixed')){const parts=[],o=fracStr(f,mode!=='mixed');if(o!==resultText())parts.push(o);parts.push(recurStr(last)||fmtD(last));return '= '+parts.join(' = ')}
+  if(mode==='dec'&&f&&f[1]>1&&f[1]<=1000){const rc=recurStr(last);if(rc)return '= '+rc}
+  return '';
+}
+function paint(){
+  const on=(id,v)=>$('#'+id).classList.toggle('on',!!v);
+  on('stS',shift);on('stA',alpha);on('stH',hyp);on('stSto',sto);on('stM',cabs(vars.M)!==0);
+  $('#stMode').textContent=[cfg.cmplx?'CMPLX':'',cfg.disp==='norm'?'NORM':cfg.disp.toUpperCase()+cfg.dig,{auto:'MATH',always:'FRAC',deci:'DECI'}[cfg.frac]].filter(Boolean).join(' ');
+  $('#stAng').textContent=ang;
+  document.querySelector('.key.shift').classList.toggle('on',shift);document.querySelector('.key.alpha').classList.toggle('on',alpha);
+  const r=$('#res'),n=$('#note');
+  if(err){r.className='res err';r.textContent=err;n.textContent='';return}
+  if(justEval){r.className='res';try{r.textContent=resultText()}catch(e){mode='dec';r.textContent=resultText()}n.textContent=[note,altNote()].filter(Boolean).join('   ');return}
+  n.textContent=note;r.className='res dim';r.textContent='';
+  const src=ex.value.trim();
+  if(src&&!LAZY.test(src)){try{const o=run(src,false);r.textContent='= '+fmtVal(o.r,o.bool)}catch(e){}}
+}
+function record(e,r,n,b){hist.unshift({e,r,n,b});hist=hist.slice(0,40);store.set('hist',hist)}
+function setAnswer(v,b,src,n){preAns=ans;ans=b?(v?1:0):v;last=ans;lastBool=!!b;note=n||'';err='';mode='dec';justEval=true;
+  if(!lastBool&&!isC(last)&&!Number.isInteger(last)){const f=toFrac(last);
+    if(f&&f[1]<=1e6&&(cfg.frac==='always'||(cfg.frac==='auto'&&src&&src.includes('⁄'))))mode=/\d\s+\d+⁄/.test(src)?'mixed':'frac'}
+  saveVars();if(src)record(src,ans,note,lastBool)}
+function doEq(){
+  const src=ex.value.trim();if(!src)return;
+  try{const o=run(src,true);setAnswer(o.r,o.bool,src,o.note)}catch(e){err=e.message||'Check the expression';justEval=false}
+  hIdx=-1;
+}
+function doSolve(){
+  const src=ex.value.trim();if(!src){err='Type an equation with X first, for example X²−5X+6=0';return}
+  try{const o=solveFor(src);vars.X=o.x;setAnswer(o.x,false,'SOLVE  '+src,`X = ${fmtD(o.x)}   L−R = ${fmtD(o.res)}`)}
+  catch(e){err=e.message;justEval=false}
+}
+function currentValue(){if(justEval&&last!=null)return last;if(!ex.value.trim())return ans;doEq();return err?null:last}
+function loadHist(i){const h=hist[i];setVal(ex,h.e.replace(/^SOLVE\s+/,''));justEval=false;err='';note=''}
+function insertText(t){startNew(t);ins(t);err=''}
+function act(a){
+  if(a.startsWith('ins:')){insertText(a.slice(4));return}
+  if(a.startsWith('var:')){startNew('');ins(a.slice(4));err='';return}
+  if(a.startsWith('trig:')||a.startsWith('itrig:')){const f=a.split(':')[1],t=f+(hyp?'h':'')+(a[0]==='i'?'⁻¹':'')+'(';hyp=false;insertText(t);return}
+  switch(a){
+    case 'shift':shift=!shift;alpha=false;return;
+    case 'alpha':alpha=!alpha;shift=false;return;
+    case 'hyp':hyp=!hyp;return;
+    case 'mode':openMode();return;
+    case 'catalog':openCatalog();return;
+    case 'calc':openCalc();return;
+    case 'solve':doSolve();return;
+    case 'eqn':openEqn();return;
+    case 'cmp':pick('Comparison',[['>','greater than'],['<','less than'],['≥','greater or equal'],['≤','less or equal'],['≠','not equal'],['=','equals (for SOLVE)']].map(([s,d])=>[s,d,s]));return;
+    case 'recur':insertText('‾');return;
+    case 'si':pick('SI prefixes',[['T','tera ×10¹²','ᴇ12'],['G','giga ×10⁹','ᴇ9'],['M','mega ×10⁶','ᴇ6'],['k','kilo ×10³','ᴇ3'],['m','milli ×10⁻³','ᴇ-3'],['μ','micro ×10⁻⁶','ᴇ-6'],['n','nano ×10⁻⁹','ᴇ-9'],['p','pico ×10⁻¹²','ᴇ-12'],['f','femto ×10⁻¹⁵','ᴇ-15']]);return;
+    case 'const':openConst();return;
+    case 'conv':location.hash='units';return;
+    case 'vars':openVars();return;
+    case 'sto':sto=true;toast('STO: now press a variable key (ALPHA letters A–F, X, Y, M, T)');return;
+    case 'clrv':VARN.forEach(v=>vars[v]=0);saveVars();toast('Variables A–F, X, Y, M, T set to 0');return;
+    case 'matrix':openMatrix();return;
+    case 'vector':openVector();return;
+    case 'stat':openStat();return;
+    case 'distr':openDistr();return;
+    case 'func':openTable();return;
+    case 'cmplx':openCmplx();return;
+    case 'help':$('#helpSheet').hidden=false;return;
+    case 'hist':paintHist();$('#histSheet').hidden=false;return;
+    case 'dms':
+      if(justEval&&last!=null&&!isC(last)&&!lastBool){mode=mode==='dms'?'dec':'dms';return}
+      {const seg=(ex.value.slice(0,curOf(ex)).match(/[0-9.°′″'"]*$/)||[''])[0];
+       const t=/[″"]/.test(seg)?'':/[′']/.test(seg)?'″':seg.includes('°')?'′':'°';if(t){startNew('');ins(t)}}return;
+    case 'fact':
+      if(last==null||isC(last)){err='Calculate a whole number first, then press SHIFT °′″ (FACT)';return}
+      try{factorize(last);mode='fact';err='';justEval=true}catch(e){err=e.message}return;
+    case 'eng':
+      if(last==null||!justEval||isC(last)||lastBool)return;
+      if(mode!=='eng'){mode='eng';engN=0}else engN++;if(engN>1)engN=-1;return;
+    case 'sd':if(justEval&&last!=null&&!isC(last)&&!lastBool){const f=toFrac(last);if(!f||f[1]===1){mode='dec';toast('This answer has no fraction form');return}mode=(mode==='frac'||mode==='mixed')?'dec':'frac'}return;
+    case 'mixed':if(justEval&&last!=null&&!isC(last)&&!lastBool){const f=toFrac(last);if(!f||f[1]===1){toast('This answer has no fraction form');return}mode=mode==='mixed'?'frac':'mixed'}return;
+    case 'mplus':case 'mminus':{const v=currentValue();if(v==null)return;vars.M=a==='mplus'?cadd(vars.M,v):csub(vars.M,v);ans=v;last=v;justEval=true;mode='dec';note=`M = ${fmtVal(vars.M)}`;saveVars();return}
+    case 'bs':if(justEval){justEval=false;note=''}bs();err='';return;
+    case 'ac':setVal(ex,'');err='';note='';justEval=false;mode='dec';hyp=false;return;
+    case 'clrall':VARN.forEach(v=>vars[v]=0);ans=0;preAns=0;hist=[];store.set('hist',hist);saveVars();setVal(ex,'');last=null;err='';note='';justEval=false;toast('Cleared memory, variables and history');return;
+    case 'copy':{if(!(justEval&&last!=null)&&!ex.value.trim()){toast('Nothing to copy yet');return}
+      const txt=justEval&&last!=null?resultText().replace(/−/g,'-').replace(/̅/g,''):ex.value;
+      clip=justEval&&last!=null&&!lastBool?exprOf(last):ex.value;store.set('clip',clip);
+      if(navigator.clipboard)navigator.clipboard.writeText(txt).then(()=>toast('Copied '+txt),()=>toast('Copied inside the calculator. Use ALPHA 0 to paste.'));else toast('Copied inside the calculator. Use ALPHA 0 to paste.');return}
+    case 'paste':if(!clip){toast('Nothing copied yet. Use SHIFT 0 (COPY) first.');return}insertText(clip);return;
+    case 'eq':doEq();return;
+    case 'up':if(!hist.length){toast('No history yet');return}hIdx=Math.min(hIdx+1,hist.length-1);loadHist(hIdx);return;
+    case 'down':if(hIdx<=0){hIdx=-1;setVal(ex,'');justEval=false;return}hIdx--;loadHist(hIdx);return;
+    case 'left':case 'right':{if(justEval){justEval=false;note=''}const c=Math.max(0,Math.min(ex.value.length,curOf(ex)+(a==='left'?-1:1)));ex.focus({preventScroll:true});setCur(ex,c);return}
+    case 'angle':ang=ang==='DEG'?'RAD':ang==='RAD'?'GRA':'DEG';store.set('ang',ang);toast('Angle unit: '+({DEG:'degrees',RAD:'radians',GRA:'grads'})[ang]);return;
+  }
+}
+function pressKey(d){
+  if(sto){sto=false;shift=false;alpha=false;
+    if(d.a&&d.a[1].startsWith('var:')){const v=d.a[1].slice(4),val=currentValue();if(val!=null){vars[v]=val;saveVars();note=`${v} = ${fmtVal(val)} stored`;justEval=true;last=val;lastBool=false;mode='dec'}}
+    else toast('STO cancelled');return}
+  let a=d.k||('ins:'+d.m);
+  if(shift&&d.s)a=d.s[1];else if(alpha&&d.a)a=d.a[1];
+  if(a!=='shift')shift=false;if(a!=='alpha')alpha=false;
+  act(a);
+}
+let lpT=null,lpFired=false;
+$('#calc').addEventListener('pointerdown',e=>{const k=e.target.closest('.key');lpFired=false;clearTimeout(lpT);if(!k)return;const d=ALLK[+k.dataset.i];if(!d.s)return;
+  lpT=setTimeout(()=>{lpFired=true;shift=false;alpha=false;k.classList.add('held');setTimeout(()=>k.classList.remove('held'),250);try{navigator.vibrate&&navigator.vibrate(15)}catch(_){};
+    if(sto){pressKey(d)}else act(d.s[1]);paint()},450)});
+['pointerup','pointercancel'].forEach(t=>$('#calc').addEventListener(t,()=>clearTimeout(lpT)));
+$('#calc').addEventListener('pointerout',e=>{if(e.target.closest('.key'))clearTimeout(lpT)});
+$('#calc').addEventListener('contextmenu',e=>{if(e.target.closest('.key'))e.preventDefault()});
+$('#calc').addEventListener('click',e=>{
+  const pd=e.target.closest('[data-pad]');if(pd){act(pd.dataset.pad);paint();return}
+  const k=e.target.closest('.key');if(!k)return;if(lpFired){lpFired=false;return}pressKey(ALLK[+k.dataset.i]);paint()});
+$('#stAng').addEventListener('click',()=>{act('angle');paint()});
+ex.addEventListener('input',()=>{ex._cur=ex.selectionStart;justEval=false;err='';note='';paint()});
+['click','keyup','select'].forEach(t=>ex.addEventListener(t,()=>{ex._cur=ex.selectionStart}));
+ex.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();doEq();paint()}else if(e.key==='Escape'){act('ac');paint()}});
+
+/* ---------- sheets ---------- */
+document.querySelectorAll('.sheet').forEach(s=>s.addEventListener('click',e=>{if(e.target===s||e.target.closest('[data-close]')){s.hidden=true;paint()}}));
+function sheet(id,title){
+  let s=document.getElementById(id);
+  if(!s){s=document.createElement('div');s.className='sheet';s.id=id;
+    s.innerHTML=`<div class="card" role="dialog" aria-label="${esc(title)}"><div class="card-head"><h2>${esc(title)}</h2><button class="close" data-close>Done</button></div><div class="body"></div></div>`;
+    document.body.appendChild(s);s.addEventListener('click',e=>{if(e.target===s||e.target.closest('[data-close]')){s.hidden=true;paint()}})}
+  s.hidden=false;return s.querySelector('.body');
+}
+const closeSheet=id=>{const s=document.getElementById(id);if(s)s.hidden=true};
+function insertFrom(id,t){closeSheet(id);insertText(t);paint()}
+const kv=(label,val,insv)=>`<span>${label}</span><span>${val}</span>${insv!=null?`<button class="ins sm" data-ins="${esc(insv)}">Insert</button>`:'<span></span>'}`;
+function wireInsert(b,id){b.addEventListener('click',e=>{const x=e.target.closest('[data-ins]');if(x)insertFrom(id,x.dataset.ins)})}
+const numIns=v=>exprOf(isC(v)?v:parseFloat(v.toPrecision(12)));
+function pick(title,items){
+  const b=sheet('pickSheet',title);
+  b.innerHTML=`<div class="list">${items.map(([s,d,v])=>`<button data-ins="${esc(v)}"><span><b>${s}</b></span><span style="font-weight:400;color:var(--muted)">${d}</span></button>`).join('')}</div>`;
+  b.onclick=e=>{const x=e.target.closest('[data-ins]');if(x)insertFrom('pickSheet',x.dataset.ins)};
+}
+const evalCell=(s,w)=>{s=String(s).trim();if(!s)return 0;return rl(run(s,false).r,w||'This box')};
+const nice=x=>{if(!isFinite(x))return x;const r=Math.round(x);return Math.abs(x-r)<1e-9*Math.max(1,Math.abs(x))?r:parseFloat(x.toPrecision(12))};
+
+/* history */
+function paintHist(){
+  $('#histList').innerHTML=hist.length?hist.map((x,i)=>`<button data-i="${i}"><span>${esc(x.e)}</span><span>${esc(fmtVal(x.r,x.b))}</span>${x.n?`<small>${esc(x.n)}</small>`:''}</button>`).join(''):'<div class="empty">Answers you calculate with = appear here. Tap one to reuse it.</div>';
+}
+$('#histList').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;loadHist(+b.dataset.i);$('#histSheet').hidden=true;paint()});
+$('#clrHist').addEventListener('click',()=>{hist=[];store.set('hist',hist);paintHist()});
+
+/* variables (RCL) */
+function openVars(){
+  $('#varList').innerHTML=VARN.map(v=>`<div class="vrow"><b>${v}</b><input type="text" inputmode="decimal" id="var-${v}" value="${esc(isC(vars[v])?exprOf(vars[v]):vars[v])}" aria-label="Value of ${v}"><button class="ins" data-v="${v}">Insert</button></div>`).join('');
+  $('#varSheet').hidden=false;
+}
+$('#varList').addEventListener('input',e=>{const i=e.target;if(!i.id)return;const v=i.id.slice(4);try{vars[v]=i.value.trim()?run(i.value,false).r:0;saveVars();i.style.borderColor=''}catch(_){i.style.borderColor='var(--bad)'}});
+$('#varList').addEventListener('click',e=>{const b=e.target.closest('.ins');if(!b)return;startNew('');ins(b.dataset.v);$('#varSheet').hidden=true;paint()});
+$('#clrVars').onclick=()=>{VARN.forEach(v=>vars[v]=0);saveVars();openVars()};
+
+/* constants */
+const CONSTS=[['Engineering',[['g','Gravity','9.80665','m/s²'],['γw','Unit weight of water','9.81','kN/m³'],['ρw','Density of water','1000','kg/m³'],['γc','Unit weight of RCC (typical)','25','kN/m³'],['γpcc','Unit weight of plain concrete','24','kN/m³'],['γs','Unit weight of steel','78.5','kN/m³'],['ρs','Density of steel','7850','kg/m³'],['Es','Modulus of elasticity of steel','200000','N/mm²'],['atm','Standard atmosphere','101.325','kPa']]],
+ ['Unit factors',[['ft','One foot in metres','0.3048','m'],['in','One inch in mm','25.4','mm'],['lb','One pound in kg','0.45359237','kg'],['psi','One psi in MPa','0.006894757','MPa'],['kip','One kip in kN','4.448222','kN'],['acre','One acre in m²','4046.8564224','m²']]],
+ ['Science',[['π','Pi','3.14159265359',''],['e','Euler’s number','2.71828182846',''],['c','Speed of light','299792458','m/s'],['G','Gravitational constant','6.6743ᴇ-11','N·m²/kg²'],['h','Planck constant','6.62607015ᴇ-34','J·s'],['q','Elementary charge','1.602176634ᴇ-19','C'],['Nₐ','Avogadro constant','6.02214076ᴇ23','1/mol'],['k','Boltzmann constant','1.380649ᴇ-23','J/K'],['R','Gas constant','8.314462618','J/(mol·K)'],['σ','Stefan–Boltzmann constant','5.670374419ᴇ-8','W/(m²·K⁴)'],['ε₀','Vacuum permittivity','8.8541878128ᴇ-12','F/m'],['μ₀','Vacuum permeability','1.25663706212ᴇ-6','N/A²'],['mₑ','Electron mass','9.1093837015ᴇ-31','kg'],['mₚ','Proton mass','1.67262192369ᴇ-27','kg']]]];
+function openConst(){
+  $('#constList').innerHTML=CONSTS.map(([h,l])=>`<h3>${h}</h3>`+l.map(c=>{const v=c[2].includes('ᴇ')?'('+c[2]+')':c[2];return `<button data-ins="${esc(v)}"><span><b>${c[0]}</b> · ${c[1]}</span><span>${sup(c[2].replace('ᴇ','×10^'))}</span>${c[3]?`<small>${c[3]}</small>`:''}</button>`}).join('')).join('');
+  $('#constSheet').hidden=false;
+}
+$('#constList').addEventListener('click',e=>{const b=e.target.closest('[data-ins]');if(b)insertFrom('constSheet',b.dataset.ins)});
+
+/* help examples */
+const SEX=['2 3⁄4+1⁄2','0.1‾6×3','sin⁻¹(0.5)','√(3²+4²)','30°15′20″+10°50′','∫(X², 0, 3)','d/dx(X³, 2)','Σ(X, 1, 10)','lim(sin(X)⁄X, 0)','X²−5X+6=0','Pol(30, 40)','(3+4i)×(1−2i)','5∠53.13','17÷R5','2.5ᴇ3×1.2','5>3'];
+$('#sciEx').innerHTML=SEX.map(x=>`<button>${esc(x)}</button>`).join('');
+$('#sciEx').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const t=b.textContent;if(t.includes('i')&&!cfg.cmplx&&/\di|i\)/.test(t)){cfg.cmplx=true;saveCfg()}setVal(ex,t);justEval=false;err='';note=t.includes('=')?'Press SHIFT CALC (SOLVE) to find X':'';$('#helpSheet').hidden=true;paint()});
+
+/* MODE */
+const segHTML=(key,opts,cur)=>`<div class="seg" style="grid-template-columns:repeat(${opts.length},minmax(0,1fr))">${opts.map(([v,l])=>`<button data-set="${key}" data-v="${v}" class="${String(cur)===String(v)?'on':''}">${l}</button>`).join('')}</div>`;
+function openMode(){
+  const b=sheet('modeSheet','MODE and setup');
+  b.innerHTML=`<h3>Calculation</h3>${segHTML('cmplx',[[0,'COMP · real numbers'],[1,'CMPLX · complex']],cfg.cmplx?1:0)}
+  <div class="opgrid">${[['eqn','EQN · equations'],['matrix','MATRIX'],['vector','VECTOR'],['stat','STAT'],['distr','DISTR'],['func','TABLE · f(x)']].map(([k,l])=>`<button class="op" data-act="${k}">${l}</button>`).join('')}</div>
+  <h3>Angle unit</h3>${segHTML('ang',[['DEG','Degrees'],['RAD','Radians'],['GRA','Grads']],ang)}
+  <h3>Number format</h3>${segHTML('disp',[['norm','Normal'],['fix','Fix decimals'],['sci','Sci notation']],cfg.disp)}
+  ${cfg.disp!=='norm'?`<label>${cfg.disp==='fix'?'Decimal places':'Significant digits'} <select id="digSel">${(cfg.disp==='fix'?[0,1,2,3,4,5,6,7,8,9]:[1,2,3,4,5,6,7,8,9,10]).map(n=>`<option ${n===cfg.dig?'selected':''}>${n}</option>`).join('')}</select></label>`:''}
+  <h3>Answers</h3>${segHTML('frac',[['auto','Fraction when I type one'],['always','Always fraction'],['deci','Always decimal']],cfg.frac)}
+  <h3>Complex answers</h3>${segHTML('polar',[[0,'a + bi'],[1,'r∠θ']],cfg.polar?1:0)}`;
+  b.onclick=e=>{const s=e.target.closest('[data-set]'),o=e.target.closest('[data-act]');
+    if(o){closeSheet('modeSheet');act(o.dataset.act);paint();return}
+    if(!s)return;const k=s.dataset.set,v=s.dataset.v;
+    if(k==='cmplx')cfg.cmplx=v==='1';else if(k==='polar')cfg.polar=v==='1';
+    else if(k==='ang'){ang=v;store.set('ang',ang)}
+    else if(k==='disp'){cfg.disp=v;if(v==='fix'&&(cfg.dig<0||cfg.dig>9))cfg.dig=2;if(v==='sci'&&(cfg.dig<1||cfg.dig>10))cfg.dig=4}
+    else cfg[k]=v;
+    saveCfg();openMode();paint()};
+  b.onchange=e=>{if(e.target.id==='digSel'){cfg.dig=+e.target.value;saveCfg();paint()}};
+}
+
+/* 2nd: function catalog */
+const CAT=[['Trigonometry',['sin(','cos(','tan(','cot(','sec(','csc(','sin⁻¹(','cos⁻¹(','tan⁻¹(','cot⁻¹(']],
+ ['Hyperbolic',['sinh(','cosh(','tanh(','sinh⁻¹(','cosh⁻¹(','tanh⁻¹(']],
+ ['Powers, roots and logs',['²','³','⁻¹','^(','√(','∛(','ˣ√(','log(','ln(','logₓ(','10^(','e^(']],
+ ['Calculus',['∫(','d/dx(','Σ(','Π(','lim(']],
+ ['Numbers',['Abs(','Int(','Ceil(','Floor(','mod(','GCD(','LCM(','nPr(','nCr(','!','%','÷R','⁄','‾']],
+ ['Complex',['i','∠','Arg(','Conj(','Real(','Imag(']],
+ ['Coordinates and random',['Pol(','Rec(','Ran#','RanInt(']],
+ ['Values',['π','e','∞','Ans','PreAns',', ']],
+ ['Compare',['>','<','≥','≤','≠','=']],
+ ['Variables',VARN]];
+function openCatalog(){
+  const b=sheet('catSheet','All functions');
+  b.innerHTML='<p class="hint">Tap a function to type it.</p>'+CAT.map(([h,l])=>`<h3>${h}</h3><div class="chips">${l.map(x=>`<button data-ins="${esc(x)}">${esc(x==='⁄'?'x⁄y':x==='‾'?'‾ recurring':x===', '?', (comma)':x)}</button>`).join('')}</div>`).join('');
+  b.onclick=e=>{const x=e.target.closest('[data-ins]');if(x)insertFrom('catSheet',x.dataset.ins)};
+}
+
+/* CALC */
+function openCalc(){
+  const src=ex.value.trim();
+  if(!src){err='CALC works out an expression with variables. Type one first, e.g. 2X+Y (ALPHA ")" types X).';return}
+  let target=null,rhs=src;const m=src.match(/^\s*([A-FXYMT])\s*=([^=]+)$/);
+  if(m){target=m[1];rhs=m[2]}else if(src.includes('=')){err='For an equation, use SOLVE (SHIFT CALC) to find X.';return}
+  let used;try{used=[...new Set(tokenize(rhs).filter(t=>t.k==='v').map(t=>t.v))]}catch(e){err=e.message;return}
+  const b=sheet('calcSheet','CALC');
+  b.innerHTML=`<p class="hint">Enter a value for each variable, then press Calculate. Change values and press again to repeat.</p>
+  <div class="big" style="font-size:1.05rem">${target?esc(target)+' = ':''}${esc(rhs)}</div>
+  ${used.length?used.map(v=>`<div class="vrow" style="grid-template-columns:2rem 1fr"><b>${v}</b><input type="text" inputmode="decimal" id="cv-${v}" value="${esc(isC(vars[v])?exprOf(vars[v]):vars[v])}"></div>`).join(''):'<p class="hint">There are no variables in this expression.</p>'}
+  <button class="op primary" id="calcGo">Calculate</button><div class="result"><div class="big" id="calcOut"></div></div>`;
+  const go=()=>{try{for(const v of used){const el=$('#cv-'+v);vars[v]=el.value.trim()?run(el.value,false).r:0}
+      const o=run(rhs,true);if(target)vars[target]=o.r;setAnswer(o.r,o.bool,src,target?`${target} = ${fmtVal(o.r,o.bool)}`:o.note);
+      $('#calcOut').textContent=(target?target+' = ':'')+fmtVal(o.r,o.bool);paint()}catch(e){$('#calcOut').textContent=e.message}};
+  $('#calcGo').onclick=go;b.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go()}};
+  const first=used.length&&$('#cv-'+used[0]);if(first)setTimeout(()=>first.focus(),50);
+}
+
+/* CMPLX */
+function openCmplx(){
+  const b=sheet('cxSheet','CMPLX · complex numbers');
+  b.innerHTML=`<h3>Mode</h3>${segHTML('cmplx',[[0,'COMP · real only'],[1,'CMPLX · allow complex']],cfg.cmplx?1:0)}
+  <h3>Show answers as</h3>${segHTML('polar',[[0,'a + bi'],[1,'r∠θ']],cfg.polar?1:0)}
+  <h3>Insert</h3><div class="chips">${['i','∠','Arg(','Conj(','Real(','Imag(','Abs('].map(x=>`<button data-ins="${x}">${x}</button>`).join('')}</div>
+  <h3>Examples</h3><div class="chips">${['(3+4i)×(1−2i)','5∠53.13+2i','√(−9)','Arg(3+4i)','Abs(3+4i)','(2+i)²'].map(x=>`<button data-ex="${esc(x)}">${esc(x)}</button>`).join('')}</div>
+  <p class="hint">Type i with SHIFT ENG and ∠ with SHIFT (−). Angles in r∠θ follow the angle unit (${ang}).</p>`;
+  b.onclick=e=>{const s=e.target.closest('[data-set]');if(s){cfg[s.dataset.set]=s.dataset.v==='1';saveCfg();openCmplx();paint();return}
+    const x=e.target.closest('[data-ins]');if(x){insertFrom('cxSheet',x.dataset.ins);return}
+    const y=e.target.closest('[data-ex]');if(y){cfg.cmplx=true;saveCfg();closeSheet('cxSheet');setVal(ex,y.dataset.ex);justEval=false;err='';note='';doEq();paint()}};
+}
+
+/* EQN */
+const EQT={
+  q:{form:'a·x² + b·x + c = 0',rows:[['a','b','c']],val:[[1,-5,6]]},
+  c:{form:'a·x³ + b·x² + c·x + d = 0',rows:[['a','b','c','d']],val:[[1,-6,11,-6]]},
+  l2:{form:'a₁x + b₁y = c₁   and   a₂x + b₂y = c₂',rows:[['a₁','b₁','c₁'],['a₂','b₂','c₂']],val:[[2,3,8],[1,-1,-1]]},
+  l3:{form:'aₙx + bₙy + cₙz = dₙ   for three equations',rows:[['a₁','b₁','c₁','d₁'],['a₂','b₂','c₂','d₂'],['a₃','b₃','c₃','d₃']],val:[[1,1,1,6],[2,-1,1,3],[1,2,-1,2]]},
+  iq:{form:'a·x² + b·x + c',rows:[['a','b','c']],val:[[1,-5,6]],ineq:true},
+  ic:{form:'a·x³ + b·x² + c·x + d',rows:[['a','b','c','d']],val:[[1,-6,11,-6]],ineq:true}
+};
+let eqT='q',eqSign='>';
+function openEqn(){paintEqn();$('#eqnSheet').hidden=false}
+function paintEqn(){
+  const t=EQT[eqT];$('#eqnForm').textContent=t.form+(t.ineq?` ${eqSign} 0`:'');
+  document.querySelectorAll('#eqnType button').forEach(b=>b.classList.toggle('on',b.dataset.t===eqT));
+  $('#eqnIn').innerHTML=(t.ineq?`<label>Sign <select id="eqSign">${['>','<','≥','≤'].map(s=>`<option ${s===eqSign?'selected':''}>${s}</option>`).join('')}</select></label>`:'')+t.rows.map((r,i)=>`<div class="eqrow" style="grid-template-columns:repeat(${r.length},minmax(0,1fr))">${r.map((n,j)=>`<label>${n}<input type="text" inputmode="decimal" id="eq-${eqT}-${i}-${j}" value="${t.val[i][j]}"></label>`).join('')}</div>`).join('');
+  solveEqn();
+}
+function quadRoots(a,b,c){
+  if(a===0){if(b===0)throw Error('a and b cannot both be 0');return[[-c/b,0]]}
+  const D=b*b-4*a*c;
+  if(D>=0){const s=Math.sqrt(D),q=-(b+Math.sign(b||1)*s)/2;const r1=q/a,r2=q!==0?c/q:-b/a-r1;return[[r1,0],[r2,0]].sort((x,y)=>x[0]-y[0])}
+  const re=-b/(2*a),im=Math.sqrt(-D)/(2*Math.abs(a));return[[re,im],[re,-im]];
+}
+function cubicRoots(a,b,c,d){
+  if(a===0)return quadRoots(b,c,d);
+  const f=x=>((a*x+b)*x+c)*x+d,df=x=>(3*a*x+2*b)*x+c;
+  const B=b/a,Cc=c/a,Dd=d/a,p=Cc-B*B/3,q=2*B*B*B/27-B*Cc/3+Dd,disc=q*q/4+p*p*p/27;
+  let r;
+  if(disc>1e-14){const s=Math.sqrt(disc);r=Math.cbrt(-q/2+s)+Math.cbrt(-q/2-s)-B/3}
+  else if(Math.abs(p)<1e-14)r=Math.cbrt(-q)-B/3;
+  else{const m=2*Math.sqrt(-p/3),th=Math.acos(Math.max(-1,Math.min(1,3*q/(p*m))))/3;r=m*Math.cos(th)-B/3}
+  for(let i=0;i<20;i++){const g=df(r);if(!g)break;const n=r-f(r)/g;if(Math.abs(n-r)<1e-15*Math.max(1,Math.abs(r))){r=n;break}r=n}
+  const qb=b+a*r,qc=c+qb*r;
+  return[[r,0],...quadRoots(a,qb,qc)].sort((x,y)=>(x[1]!==0)-(y[1]!==0)||x[0]-y[0]);
+}
+function linSolve(M){
+  const n=M.length,A=M.map(r=>r.slice());
+  for(let c=0;c<n;c++){let piv=c;for(let r=c+1;r<n;r++)if(Math.abs(A[r][c])>Math.abs(A[piv][c]))piv=r;
+    if(Math.abs(A[piv][c])<1e-12)throw Error('No single solution: the equations are parallel or repeat each other');
+    [A[c],A[piv]]=[A[piv],A[c]];
+    for(let r=0;r<n;r++){if(r===c)continue;const k=A[r][c]/A[c][c];for(let j=c;j<=n;j++)A[r][j]-=k*A[c][j]}}
+  return A.map((r,i)=>r[n]/r[i]);
+}
+function ineqSolve(co,sign){
+  if(co[0]===0)throw Error('a cannot be 0 for this inequality');
+  const p=x=>co.reduce((s,c)=>s*x+c,0),strict=sign==='>'||sign==='<',want=sign==='>'||sign==='≥'?1:-1;
+  const R=(co.length===3?quadRoots(...co):cubicRoots(...co)).filter(r=>r[1]===0).map(r=>nice(r[0])).sort((a,b)=>a-b).filter((r,i,a)=>!i||Math.abs(r-a[i-1])>1e-9);
+  const els=[];const ok=x=>Math.sign(p(x))===want;
+  if(!R.length)return ok(0)?'All real numbers':'No solution';
+  els.push({lo:-Infinity,hi:R[0],inc:ok(R[0]-1)});
+  R.forEach((r,i)=>{els.push({pt:r,inc:!strict});els.push({lo:r,hi:i+1<R.length?R[i+1]:Infinity,inc:ok(i+1<R.length?(r+R[i+1])/2:r+1)})});
+  const runs=[];let cur=null;for(const e of els){if(e.inc){if(!cur)cur=[e];else cur.push(e)}else if(cur){runs.push(cur);cur=null}}if(cur)runs.push(cur);
+  if(!runs.length)return 'No solution';
+  const v=x=>fmtD(x);
+  return runs.map(rn=>{const a=rn[0],z=rn[rn.length-1];
+    const lo=a.pt!=null?a.pt:a.lo,loC=a.pt!=null,hi=z.pt!=null?z.pt:z.hi,hiC=z.pt!=null;
+    if(lo===-Infinity&&hi===Infinity)return 'All real numbers';
+    if(rn.length===1&&a.pt!=null)return 'x = '+v(a.pt);
+    if(lo===-Infinity)return `x ${hiC?'≤':'<'} ${v(hi)}`;
+    if(hi===Infinity)return `x ${loC?'≥':'>'} ${v(lo)}`;
+    return `${v(lo)} ${loC?'≤':'<'} x ${hiC?'≤':'<'} ${v(hi)}`}).join(',   ');
+}
+function solveEqn(){
+  const t=EQT[eqT],out=$('#eqnOut');
+  try{
+    const vals=t.rows.map((r,i)=>r.map((_,j)=>evalCell($(`#eq-${eqT}-${i}-${j}`).value,'EQN')));
+    t.val=t.rows.map((r,i)=>r.map((_,j)=>$(`#eq-${eqT}-${i}-${j}`).value));
+    let rows=[];
+    if(t.ineq){out.innerHTML=`<div><span>${esc(ineqSolve(vals[0],eqSign))}</span></div>`;out._rows=[];return}
+    if(eqT==='q'||eqT==='c'){const R=eqT==='q'?quadRoots(...vals[0]):cubicRoots(...vals[0]);
+      rows=R.map(([re,im],i)=>{re=nice(re);im=nice(im);return{n:'x'+'₁₂₃'[i],t:im?`${fmtD(re)} ${im<0?'−':'+'} ${fmtD(Math.abs(im))}i`:fmtD(re),v:im?C(re,im):re}});
+      if(eqT==='q'&&vals[0][0]!==0){const[a,b,c]=vals[0],xv=-b/(2*a);rows.push({n:'b²−4ac',t:fmtD(nice(b*b-4*a*c)),v:null},{n:'vertex x',t:fmtD(nice(xv)),v:null},{n:'vertex y',t:fmtD(nice(a*xv*xv+b*xv+c)),v:null})}}
+    else{const x=linSolve(vals);rows=x.map((v,i)=>({n:'xyz'[i],t:fmtD(nice(v)),v:nice(v)}))}
+    out.innerHTML=rows.map((r,i)=>`<div><span>${r.n} = ${r.t}</span>${r.v!=null?`<button class="ins" data-i="${i}">Insert</button>`:''}</div>`).join('')+(rows.some(r=>/i$/.test(r.t))?'<p class="hint">i = √−1. Complex roots: no real solution.</p>':'');
+    out._rows=rows;
+  }catch(e){out.innerHTML=`<p class="hint" style="color:var(--bad)">${esc(e.message)}</p>`;out._rows=[]}
+}
+$('#eqnType').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;eqT=b.dataset.t;paintEqn()});
+$('#eqnIn').addEventListener('input',solveEqn);
+$('#eqnIn').addEventListener('change',e=>{if(e.target.id==='eqSign'){eqSign=e.target.value;paintEqn()}});
+$('#eqnOut').addEventListener('click',e=>{const b=e.target.closest('.ins');if(!b)return;const v=$('#eqnOut')._rows[+b.dataset.i].v;if(isC(v)&&!cfg.cmplx){cfg.cmplx=true;saveCfg()}$('#eqnSheet').hidden=true;insertText(numIns(v));paint()});
+
+/* MATRIX */
+const MX=Object.assign({A:{r:2,c:2,v:[['2','1'],['1','3']]},B:{r:2,c:1,v:[['5'],['10']]},k:'2'},store.get('mx',{}));
+let mxRes=null;
+const fitM=m=>{while(m.v.length<m.r)m.v.push([]);m.v.forEach(r=>{while(r.length<m.c)r.push('0')})};
+const readM=n=>{const m=MX[n];fitM(m);return m.v.slice(0,m.r).map(r=>r.slice(0,m.c).map(x=>{try{return evalCell(x)}catch(e){throw Error(`Matrix ${n}: “${x}” is not a number`)}}))};
+const mT=a=>a[0].map((_,j)=>a.map(r=>r[j]));
+const sameSize=(a,b)=>{if(a.length!==b.length||a[0].length!==b[0].length)throw Error('A and B must be the same size')};
+const mMul=(a,b)=>{if(a[0].length!==b.length)throw Error(`Cannot multiply: the first matrix has ${a[0].length} column(s) but the second has ${b.length} row(s)`);return a.map(r=>b[0].map((_,j)=>r.reduce((s,x,k)=>s+x*b[k][j],0)))};
+const sq=(a,w)=>{if(a.length!==a[0].length)throw Error(w+' needs a square matrix');return a};
+function mDet(a){sq(a,'Determinant');const n=a.length,m=a.map(r=>r.slice());let d=1;for(let c=0;c<n;c++){let p=c;for(let r=c+1;r<n;r++)if(Math.abs(m[r][c])>Math.abs(m[p][c]))p=r;if(m[p][c]===0)return 0;if(p!==c){[m[p],m[c]]=[m[c],m[p]];d=-d}d*=m[c][c];for(let r=c+1;r<n;r++){const k=m[r][c]/m[c][c];for(let j=c;j<n;j++)m[r][j]-=k*m[c][j]}}return d}
+function mInv(a){sq(a,'Inverse');const n=a.length,m=a.map((r,i)=>[...r,...r.map((_,j)=>i===j?1:0)]);
+  for(let c=0;c<n;c++){let p=c;for(let r=c+1;r<n;r++)if(Math.abs(m[r][c])>Math.abs(m[p][c]))p=r;if(Math.abs(m[p][c])<1e-12)throw Error('This matrix has no inverse (its determinant is 0)');[m[p],m[c]]=[m[c],m[p]];const pv=m[c][c];for(let j=0;j<2*n;j++)m[c][j]/=pv;for(let r=0;r<n;r++){if(r===c)continue;const k=m[r][c];for(let j=0;j<2*n;j++)m[r][j]-=k*m[c][j]}}
+  return m.map(r=>r.slice(n))}
+const MOPS={'A+B':()=>{const a=readM('A'),b=readM('B');sameSize(a,b);return a.map((r,i)=>r.map((x,j)=>x+b[i][j]))},
+ 'A−B':()=>{const a=readM('A'),b=readM('B');sameSize(a,b);return a.map((r,i)=>r.map((x,j)=>x-b[i][j]))},
+ 'A×B':()=>mMul(readM('A'),readM('B')),'B×A':()=>mMul(readM('B'),readM('A')),
+ 'det A':()=>mDet(readM('A')),'det B':()=>mDet(readM('B')),'A⁻¹':()=>mInv(readM('A')),'B⁻¹':()=>mInv(readM('B')),
+ 'Aᵀ':()=>mT(readM('A')),'Bᵀ':()=>mT(readM('B')),'A²':()=>{const a=sq(readM('A'),'A²');return mMul(a,a)},
+ 'k×A':()=>{const k=evalCell(MX.k,'k');return readM('A').map(r=>r.map(x=>x*k))},
+ 'trace A':()=>{const a=sq(readM('A'),'Trace');return a.reduce((s,r,i)=>s+r[i],0)},
+ 'solve A·x=B':()=>{const a=readM('A'),b=readM('B');if(b.length!==a.length)throw Error('B needs as many rows as A');return mMul(mInv(a),b)}};
+function openMatrix(){const b=sheet('mxSheet','MATRIX');paintMx(b)}
+function mxEditor(n){const m=MX[n];fitM(m);const opt=(d)=>[1,2,3,4].map(i=>`<option ${i===m[d]?'selected':''}>${i}</option>`).join('');
+  return `<div class="mhead"><b>Matrix ${n}</b><label>Rows <select data-mx="${n}" data-dim="r">${opt('r')}</select></label><label>Cols <select data-mx="${n}" data-dim="c">${opt('c')}</select></label></div>
+  <div class="mgrid" style="grid-template-columns:repeat(${m.c},minmax(0,1fr))">${m.v.slice(0,m.r).map((r,i)=>r.slice(0,m.c).map((x,j)=>`<input type="text" inputmode="decimal" data-cell="${n}-${i}-${j}" value="${esc(x)}" aria-label="${n} row ${i+1} column ${j+1}">`).join('')).join('')}</div>`}
+function resultBlock(res,kind){
+  if(res==null)return '<p class="hint">Pick an operation above.</p>';
+  if(res.err)return `<p class="hint" style="color:var(--bad)">${esc(res.err)}</p>`;
+  const v=res.v;
+  if(typeof v==='number')return `<div class="kv">${kv(esc(res.op),fmtD(nice(v)),numIns(nice(v)))}</div>`;
+  const rows=Array.isArray(v[0])?v:[v];
+  return `<div class="hint">${esc(res.op)} =</div><div class="mres" style="grid-template-columns:repeat(${rows[0].length},minmax(0,1fr))">${rows.map(r=>r.map(x=>`<span>${fmtD(nice(x))}</span>`).join('')).join('')}</div>`+
+    (kind==='mx'?`<div class="row" style="gap:6px"><button class="op" data-copy="A">Copy to A</button><button class="op" data-copy="B">Copy to B</button></div>`:'');
+}
+function paintMx(b){
+  b.innerHTML=`${mxEditor('A')}${mxEditor('B')}
+  <div class="mhead"><label>k <input type="text" inputmode="decimal" class="ti" style="width:5rem" data-k="1" value="${esc(MX.k)}"></label><span class="hint">Cells accept fractions and expressions like 1⁄3 or √(2)</span></div>
+  <div class="opgrid">${Object.keys(MOPS).map(o=>`<button class="op" data-op="${o}">${o}</button>`).join('')}</div>
+  <div class="result" id="mxOut">${resultBlock(mxRes,'mx')}</div>`;
+  b.oninput=e=>{const c=e.target.dataset.cell;if(c){const[n,i,j]=c.split('-');MX[n].v[+i][+j]=e.target.value}if(e.target.dataset.k)MX.k=e.target.value;store.set('mx',MX)};
+  b.onchange=e=>{const s=e.target;if(s.dataset.mx){MX[s.dataset.mx][s.dataset.dim]=+s.value;fitM(MX[s.dataset.mx]);store.set('mx',MX);paintMx(b)}};
+  b.onclick=e=>{const o=e.target.closest('[data-op]');
+    if(o){try{mxRes={op:o.dataset.op,v:MOPS[o.dataset.op]()}}catch(er){mxRes={err:er.message}}$('#mxOut').innerHTML=resultBlock(mxRes,'mx');return}
+    const cp=e.target.closest('[data-copy]');if(cp&&mxRes&&Array.isArray(mxRes.v)){const n=cp.dataset.copy,v=mxRes.v;MX[n]={r:v.length,c:v[0].length,v:v.map(r=>r.map(x=>String(nice(x))))};store.set('mx',MX);paintMx(b);toast('Copied to matrix '+n);return}
+    const x=e.target.closest('[data-ins]');if(x)insertFrom('mxSheet',x.dataset.ins)};
+}
+
+/* VECTOR */
+const VX=Object.assign({dim:3,A:['3','4','0'],B:['1','2','2'],k:'2'},store.get('vx',{}));
+let vxRes=null;
+const readV=n=>VX[n].slice(0,VX.dim).map(x=>{try{return evalCell(x)}catch(e){throw Error(`Vector ${n}: “${x}” is not a number`)}});
+const vlen=a=>Math.hypot(...a),vdot=(a,b)=>a.reduce((s,x,i)=>s+x*b[i],0);
+const VOPS={'A+B':()=>{const a=readV('A'),b=readV('B');return a.map((x,i)=>x+b[i])},'A−B':()=>{const a=readV('A'),b=readV('B');return a.map((x,i)=>x-b[i])},
+ 'A·B (dot)':()=>vdot(readV('A'),readV('B')),'A×B (cross)':()=>{if(VX.dim!==3)throw Error('The cross product needs 3D vectors');const[a1,a2,a3]=readV('A'),[b1,b2,b3]=readV('B');return[a2*b3-a3*b2,a3*b1-a1*b3,a1*b2-a2*b1]},
+ '|A|':()=>vlen(readV('A')),'|B|':()=>vlen(readV('B')),
+ 'angle A, B':()=>{const a=readV('A'),b=readV('B'),d=vlen(a)*vlen(b);if(!d)throw Error('A zero vector has no direction');return fromR(Math.acos(Math.max(-1,Math.min(1,vdot(a,b)/d))))},
+ 'unit A':()=>{const a=readV('A'),l=vlen(a);if(!l)throw Error('A zero vector has no unit vector');return a.map(x=>x/l)},
+ 'k×A':()=>{const k=evalCell(VX.k,'k');return readV('A').map(x=>x*k)}};
+function openVector(){const b=sheet('vxSheet','VECTOR');paintVx(b)}
+function paintVx(b){
+  while(VX.A.length<3)VX.A.push('0');while(VX.B.length<3)VX.B.push('0');
+  const ed=n=>`<div class="mhead"><b>Vector ${n}</b></div><div class="mgrid" style="grid-template-columns:repeat(${VX.dim},minmax(0,1fr))">${VX[n].slice(0,VX.dim).map((x,i)=>`<input type="text" inputmode="decimal" data-v="${n}-${i}" value="${esc(x)}" aria-label="${n} ${'xyz'[i]}">`).join('')}</div>`;
+  b.innerHTML=`${segHTML('vdim',[[2,'2D (x, y)'],[3,'3D (x, y, z)']],VX.dim)}${ed('A')}${ed('B')}
+  <div class="mhead"><label>k <input type="text" inputmode="decimal" class="ti" style="width:5rem" data-k="1" value="${esc(VX.k)}"></label><span class="hint">Angles are in ${ang}</span></div>
+  <div class="opgrid">${Object.keys(VOPS).map(o=>`<button class="op" data-op="${o}">${o}</button>`).join('')}</div>
+  <div class="result" id="vxOut">${resultBlock(vxRes,'vx')}</div>`;
+  b.oninput=e=>{const c=e.target.dataset.v;if(c){const[n,i]=c.split('-');VX[n][+i]=e.target.value}if(e.target.dataset.k)VX.k=e.target.value;store.set('vx',VX)};
+  b.onclick=e=>{const s=e.target.closest('[data-set]');if(s){VX.dim=+s.dataset.v;store.set('vx',VX);vxRes=null;paintVx(b);return}
+    const o=e.target.closest('[data-op]');if(o){try{vxRes={op:o.dataset.op,v:VOPS[o.dataset.op]()}}catch(er){vxRes={err:er.message}}$('#vxOut').innerHTML=resultBlock(vxRes,'vx');return}
+    const x=e.target.closest('[data-ins]');if(x)insertFrom('vxSheet',x.dataset.ins)};
+}
+
+/* STAT */
+const ST=Object.assign({two:true,rows:[['10','25'],['15','34'],['20','46'],['25','55'],['30','66']],ex:'35',ey:'50'},store.get('st',{}));
+function openStat(){const b=sheet('stSheet','STAT · statistics');paintSt(b)}
+function statOut(){
+  try{
+    const rows=ST.rows.filter(r=>String(r[0]).trim()!==''||(ST.two&&String(r[1]||'').trim()!==''));
+    const xs=rows.map(r=>evalCell(r[0],'Data')),L=[];
+    if(!ST.two){const s=stats1(xs);
+      L.push(['n',s.n],['x̄ (mean)',s.mean],['Σx',s.sx],['Σx²',s.sx2],['σx (population)',s.pop],['sx (sample)',s.samp],['min',s.min],['Q1',s.q1],['median',s.med],['Q3',s.q3],['max',s.max])}
+    else{const ys=rows.map(r=>evalCell(r[1]||'','Data')),s=stats2(xs,ys);
+      L.push(['n',s.x.n],['x̄',s.x.mean],['ȳ',s.y.mean],['Σx',s.x.sx],['Σy',s.y.sx],['Σx²',s.x.sx2],['Σy²',s.y.sx2],['Σxy',s.sxy],['σx',s.x.pop],['σy',s.y.pop],['sx',s.x.samp],['sy',s.y.samp],['a (intercept)',s.A],['b (slope)',s.B],['r',s.r],['r²',s.r*s.r]);
+      let est='';try{const xv=evalCell(ST.ex,'x');est+=kv('ŷ at x = '+esc(ST.ex),fmtD(nice(s.A+s.B*xv)),numIns(s.A+s.B*xv))}catch(_){}
+      try{if(s.B){const yv=evalCell(ST.ey,'y');est+=kv('x̂ at y = '+esc(ST.ey),fmtD(nice((yv-s.A)/s.B)),numIns((yv-s.A)/s.B))}}catch(_){}
+      return `<div class="hint">Line of best fit: y = ${fmtD(nice(s.A))} ${s.B<0?'−':'+'} ${fmtD(nice(Math.abs(s.B)))}x</div><div class="kv">${L.map(([l,v])=>kv(l,isNaN(v)?'—':fmtD(nice(v)),isNaN(v)?null:numIns(v))).join('')}${est}</div>`}
+    return `<div class="kv">${L.map(([l,v])=>kv(l,isNaN(v)?'—':fmtD(nice(v)),isNaN(v)?null:numIns(v))).join('')}</div>`;
+  }catch(e){return `<p class="hint" style="color:var(--bad)">${esc(e.message)}</p>`}
+}
+function paintSt(b){
+  const cols=ST.two?'2.2rem 1fr 1fr 2rem':'2.2rem 1fr 2rem';
+  b.innerHTML=`${segHTML('two',[[0,'1-VAR · one list'],[1,'2-VAR · x, y + line']],ST.two?1:0)}
+  <div class="stbl" style="grid-template-columns:${cols}"><span class="hint">#</span><span class="hint">x</span>${ST.two?'<span class="hint">y</span>':''}<span></span>
+  ${ST.rows.map((r,i)=>`<span class="hint">${i+1}</span><input class="ti" type="text" inputmode="decimal" data-r="${i}-0" value="${esc(r[0])}">${ST.two?`<input class="ti" type="text" inputmode="decimal" data-r="${i}-1" value="${esc(r[1]||'')}">`:''}<button class="xbtn" data-del="${i}" aria-label="Delete row ${i+1}">×</button>`).join('')}</div>
+  <div class="row" style="gap:6px"><button class="op" data-add="1">+ Add row</button><button class="op" data-clear="1">Clear data</button></div>
+  ${ST.two?`<div class="row" style="gap:8px"><label>Estimate ŷ at x <input class="ti" type="text" inputmode="decimal" data-ex="x" value="${esc(ST.ex)}"></label><label>Estimate x̂ at y <input class="ti" type="text" inputmode="decimal" data-ex="y" value="${esc(ST.ey)}"></label></div>`:''}
+  <div class="result" id="stOut">${statOut()}</div>`;
+  b.oninput=e=>{const r=e.target.dataset.r;if(r){const[i,j]=r.split('-');ST.rows[+i][+j]=e.target.value}const x=e.target.dataset.ex;if(x)ST[x==='x'?'ex':'ey']=e.target.value;store.set('st',ST);$('#stOut').innerHTML=statOut()};
+  b.onclick=e=>{const t=e.target;
+    if(t.closest('[data-set]')){ST.two=t.closest('[data-set]').dataset.v==='1';store.set('st',ST);paintSt(b);return}
+    if(t.closest('[data-add]')){ST.rows.push(['','']);store.set('st',ST);paintSt(b);const ins=b.querySelectorAll(`[data-r="${ST.rows.length-1}-0"]`)[0];if(ins)ins.focus();return}
+    if(t.closest('[data-clear]')){ST.rows=[['',''],['',''],['','']];store.set('st',ST);paintSt(b);return}
+    const d=t.closest('[data-del]');if(d){ST.rows.splice(+d.dataset.del,1);if(!ST.rows.length)ST.rows.push(['','']);store.set('st',ST);paintSt(b);return}
+    const x=t.closest('[data-ins]');if(x)insertFrom('stSheet',x.dataset.ins)};
+}
+
+/* DISTR */
+const DT={npd:['Normal PD',[['x','x'],['s','σ'],['m','μ']]],ncd:['Normal CD',[['lo','Lower (blank = −∞)'],['hi','Upper (blank = +∞)'],['s','σ'],['m','μ']]],inv:['Inverse Normal',[['p','Area to the left'],['s','σ'],['m','μ']]],
+  bpd:['Binomial PD',[['x','x'],['n','N (trials)'],['p','p (success)']]],bcd:['Binomial CD',[['x','x'],['n','N (trials)'],['p','p (success)']]],ppd:['Poisson PD',[['x','x'],['l','λ (mean)']]],pcd:['Poisson CD',[['x','x'],['l','λ (mean)']]]};
+const DS=Object.assign({t:'ncd',v:{x:'1',s:'1',m:'0',lo:'-1.96',hi:'1.96',p:'0.95',n:'10',l:'3'}},store.get('ds',{}));
+function distrCalc(){
+  const t=DS.t,g=k=>{const s=String(DS.v[k]??'').trim();return s===''?null:evalCell(s,DT[t][0])},need=k=>{const v=g(k);if(v==null)throw Error('Fill in every box');return v};
+  if(t==='npd'||t==='ncd'||t==='inv'){const s=need('s'),m=need('m');if(s<=0)throw Error('σ must be greater than 0');
+    if(t==='npd'){const x=need('x');return[['P(X = x) density',npdf((x-m)/s)/s]]}
+    if(t==='ncd'){const lo=g('lo'),hi=g('hi'),a=lo==null?0:cnd((lo-m)/s),b=hi==null?1:cnd((hi-m)/s);if(lo!=null&&hi!=null&&lo>hi)throw Error('Lower must be less than upper');return[['P(lower ≤ X ≤ upper)',b-a],['z lower',lo==null?-Infinity:(lo-m)/s],['z upper',hi==null?Infinity:(hi-m)/s]]}
+    const p=need('p');return[['x with this area to the left',m+s*invNorm(p)]]}
+  if(t==='bpd'||t==='bcd'){const x=need('x'),n=asInt(need('n'),'N'),p=need('p');if(n<0||n>1e6)throw Error('N must be from 0 to 1,000,000');if(p<0||p>1)throw Error('p must be from 0 to 1');
+    if(t==='bpd')return[['P(X = x)',binPmf(x,n,p)]];let s=0;const X=Math.min(Math.floor(x),n);for(let k=0;k<=X;k++)s+=binPmf(k,n,p);return[['P(X ≤ x)',Math.min(1,s)]]}
+  const x=need('x'),l=need('l');if(l<=0)throw Error('λ must be greater than 0');
+  if(t==='ppd')return[['P(X = x)',poiPmf(x,l)]];let s=0;for(let k=0;k<=Math.floor(x)&&k<1e6;k++)s+=poiPmf(k,l);return[['P(X ≤ x)',Math.min(1,s)]];
+}
+function openDistr(){const b=sheet('dsSheet','DISTR · distributions');paintDs(b)}
+function dsOut(){try{return `<div class="kv">${distrCalc().map(([l,v])=>kv(l,isFinite(v)?fmtD(r10(v)):(v>0?'∞':'−∞'),isFinite(v)?numIns(v):null)).join('')}</div>`}catch(e){return `<p class="hint" style="color:var(--bad)">${esc(e.message)}</p>`}}
+function paintDs(b){
+  b.innerHTML=`<label>Distribution <select id="dsType">${Object.entries(DT).map(([k,[n]])=>`<option value="${k}" ${k===DS.t?'selected':''}>${n}</option>`).join('')}</select></label>
+  <div class="row" style="gap:8px">${DT[DS.t][1].map(([k,l])=>`<label>${l}<input class="ti" type="text" inputmode="decimal" data-d="${k}" value="${esc(DS.v[k]??'')}"></label>`).join('')}</div>
+  <div class="result" id="dsOut">${dsOut()}</div>
+  <p class="hint">PD gives the chance of exactly x (or the density for Normal). CD gives the chance up to x, or between two limits for Normal.</p>`;
+  b.onchange=e=>{if(e.target.id==='dsType'){DS.t=e.target.value;store.set('ds',DS);paintDs(b)}};
+  b.oninput=e=>{const k=e.target.dataset.d;if(k){DS.v[k]=e.target.value;store.set('ds',DS);$('#dsOut').innerHTML=dsOut()}};
+  b.onclick=e=>{const x=e.target.closest('[data-ins]');if(x)insertFrom('dsSheet',x.dataset.ins)};
+}
+
+/* FUNC table */
+const FT=Object.assign({f:'X²−3X+2',g:'',a:'0',b:'5',s:'1'},store.get('ft',{}));
+function tableOut(){
+  try{const fc=compile(FT.f),gc=FT.g.trim()?compile(FT.g):null,a=evalCell(FT.a,'Start'),b2=evalCell(FT.b,'End'),s=evalCell(FT.s,'Step');
+    if(s<=0)throw Error('Step must be greater than 0');if(b2<a)throw Error('End must be at least Start');const n=Math.floor((b2-a)/s+1e-9)+1;if(n>300)throw Error(`That makes ${n} rows. Use a bigger step (300 rows at most).`);
+    const ev=(c,x)=>{try{return fmtVal(c({v:{...vars,X:x},note:''}))}catch(e){return 'ERROR'}};
+    let rows='';for(let i=0;i<n;i++){const x=nice(a+i*s);rows+=`<tr><td>${fmtD(x)}</td><td>${esc(ev(fc,x))}</td>${gc?`<td>${esc(ev(gc,x))}</td>`:''}</tr>`}
+    return `<div class="tscroll"><table class="ttbl"><thead><tr><th>X</th><th>f(X)</th>${gc?'<th>g(X)</th>':''}</tr></thead><tbody>${rows}</tbody></table></div>`;
+  }catch(e){return `<p class="hint" style="color:var(--bad)">${esc(e.message)}</p>`}
+}
+function openTable(){
+  const b=sheet('ftSheet','FUNC · table of values');
+  b.innerHTML=`<label>f(X) = <input class="ti" style="text-align:left" type="text" data-t="f" value="${esc(FT.f)}"></label>
+  <label>g(X) = (optional) <input class="ti" style="text-align:left" type="text" data-t="g" value="${esc(FT.g)}"></label>
+  <div class="row" style="gap:8px"><label>Start<input class="ti" type="text" inputmode="decimal" data-t="a" value="${esc(FT.a)}"></label><label>End<input class="ti" type="text" inputmode="decimal" data-t="b" value="${esc(FT.b)}"></label><label>Step<input class="ti" type="text" inputmode="decimal" data-t="s" value="${esc(FT.s)}"></label></div>
+  <div class="result" id="ftOutT">${tableOut()}</div><p class="hint">Write the function with X, e.g. 0.5X²+2X or sin(X). Use ^ for powers if typing.</p>`;
+  b.oninput=e=>{const k=e.target.dataset.t;if(k){FT[k]=e.target.value;store.set('ft',FT);$('#ftOutT').innerHTML=tableOut()}};
+}
+
+/* ================= UNITS ================= */
+const U={
+  length:['Length',[['mm','Millimetre',1e-3],['cm','Centimetre',1e-2],['m','Metre',1],['km','Kilometre',1e3],['in','Inch',.0254],['ft','Foot',.3048],['yd','Yard',.9144],['mi','Mile',1609.344],['nmi','Nautical mile',1852]]],
+  area:['Area',[['mm²','Square millimetre',1e-6],['cm²','Square centimetre',1e-4],['m²','Square metre',1],['ha','Hectare',1e4],['km²','Square kilometre',1e6],['in²','Square inch',.00064516],['ft²','Square foot',.09290304],['yd²','Square yard',.83612736],['acre','Acre',4046.8564224],['marla','Marla (272.25 ft²)',272.25*.09290304],['kanal','Kanal (20 marla)',5445*.09290304]]],
+  volume:['Volume',[['mL','Millilitre',1e-6],['L','Litre',1e-3],['m³','Cubic metre',1],['in³','Cubic inch',1.6387064e-5],['ft³','Cubic foot',.028316846592],['yd³','Cubic yard',.764554857984],['gal US','US gallon',.003785411784],['gal UK','Imperial gallon',.00454609]]],
+  mass:['Mass',[['mg','Milligram',1e-6],['g','Gram',1e-3],['kg','Kilogram',1],['t','Tonne',1e3],['oz','Ounce',.028349523125],['lb','Pound',.45359237],['ton US','Short ton',907.18474],['ton UK','Long ton',1016.0469088]]],
+  temp:['Temperature',[['°C','Celsius'],['°F','Fahrenheit'],['K','Kelvin']]],
+  pressure:['Pressure & stress',[['Pa','Pascal',1],['kPa','Kilopascal',1e3],['MPa','Megapascal',1e6],['N/mm²','Newton per mm²',1e6],['GPa','Gigapascal',1e9],['bar','Bar',1e5],['atm','Atmosphere',101325],['psi','Pound per in²',6894.757293168],['ksi','Kip per in²',6894757.293168],['psf','Pound per ft²',47.88025898],['kgf/cm²','Kilogram-force per cm²',98066.5],['kN/m²','Kilonewton per m²',1e3]]],
+  force:['Force',[['N','Newton',1],['kN','Kilonewton',1e3],['MN','Meganewton',1e6],['kgf','Kilogram-force',9.80665],['tf','Tonne-force',9806.65],['lbf','Pound-force',4.4482216152605],['kip','Kip',4448.2216152605]]],
+  density:['Density & unit weight',[['kg/m³','Kilogram per m³',1],['g/cm³','Gram per cm³',1e3],['lb/ft³','Pound per ft³',16.018463374],['kN/m³','Kilonewton per m³ (unit weight)',1e3/9.80665]]],
+  speed:['Speed',[['m/s','Metre per second',1],['km/h','Kilometre per hour',1/3.6],['mph','Mile per hour',.44704],['ft/s','Foot per second',.3048],['kn','Knot',1852/3600]]],
+  energy:['Energy',[['J','Joule',1],['kJ','Kilojoule',1e3],['cal','Calorie',4.184],['kcal','Kilocalorie',4184],['Wh','Watt-hour',3600],['kWh','Kilowatt-hour',3.6e6],['BTU','BTU',1055.05585]]],
+  power:['Power',[['W','Watt',1],['kW','Kilowatt',1e3],['MW','Megawatt',1e6],['hp','Horsepower',745.69987],['BTU/h','BTU per hour',.29307107]]],
+  angle:['Angle',[['°','Degree',Math.PI/180],['rad','Radian',1],['grad','Gradian',Math.PI/200],['′','Arcminute',Math.PI/10800],['rev','Revolution',2*Math.PI]]],
+  time:['Time',[['s','Second',1],['min','Minute',60],['h','Hour',3600],['day','Day',86400],['wk','Week',604800],['yr','Year (365.25 d)',31557600]]],
+  data:['Digital storage',[['B','Byte',1],['kB','Kilobyte',1e3],['MB','Megabyte',1e6],['GB','Gigabyte',1e9],['TB','Terabyte',1e12],['KiB','Kibibyte',1024],['MiB','Mebibyte',1048576],['GiB','Gibibyte',1073741824]]]
+};
+const tC={'°C':[x=>x,x=>x],'°F':[x=>(x-32)*5/9,x=>x*9/5+32],'K':[x=>x-273.15,x=>x+273.15]};
+function conv(cat,v,from,to){
+  if(cat==='temp')return tC[to][1](tC[from][0](v));
+  const L=U[cat][1],f=L.find(u=>u[0]===from)[2],t=L.find(u=>u[0]===to)[2];return v*f/t;
+}
+const uc=$('#uCat'),uf=$('#uFrom'),ut=$('#uTo');
+uc.innerHTML=Object.entries(U).map(([k,[n]])=>`<option value="${k}">${n}</option>`).join('');
+function fillUnits(f,t){
+  const L=U[uc.value][1],opts=L.map(u=>`<option value="${u[0]}">${u[1]} (${u[0]})</option>`).join('');
+  uf.innerHTML=opts;ut.innerHTML=opts;uf.value=f||L[0][0];ut.value=t||L[Math.min(1,L.length-1)][0];
+}
+function units(){
+  const v=parseFloat($('#uVal').value),cat=uc.value;
+  if(isNaN(v)){$('#uOut').textContent='Enter a value';$('#uAll').innerHTML='';$('#uNote').textContent='';return}
+  const r=conv(cat,v,uf.value,ut.value);
+  $('#uOut').textContent=`${fmt(v)} ${uf.value} = ${fmtD(r)} ${ut.value}`;
+  $('#uNote').textContent=cat==='temp'?'':`1 ${uf.value} = ${fmtD(conv(cat,1,uf.value,ut.value))} ${ut.value}`;
+  $('#uAll').innerHTML=U[cat][1].map(u=>`<button data-u="${u[0]}" class="${u[0]===ut.value?'cur':''}"><span>${u[1]}</span><span>${fmtD(conv(cat,v,uf.value,u[0]))} ${u[0]}</span></button>`).join('');
+}
+uc.addEventListener('change',()=>{fillUnits();units()});
+[uf,ut,$('#uVal')].forEach(el=>el.addEventListener('input',units));
+$('#uSwap').onclick=()=>{const a=uf.value;uf.value=ut.value;ut.value=a;units()};
+$('#uAll').addEventListener('click',e=>{const b=e.target.closest('button');if(b){ut.value=b.dataset.u;units()}});
+uc.value='length';fillUnits('ft','m');
+
+/* ================= FEET-INCHES ================= */
+const IN_PER={"'":12,ft:12,feet:12,foot:12,'"':1,in:1,inch:1,inches:1,yd:36,yard:36,yards:36,m:1/.0254,meter:1/.0254,meters:1/.0254,metre:1/.0254,metres:1/.0254,cm:1/2.54,mm:1/25.4};
+function ftTok(s){
+  s=s.replace(/[’‘′`´]/g,"'").replace(/[”“″]/g,'"').replace(/''/g,'"').replace(/×/g,'*').replace(/[−–]/g,'-').replace(/,/g,'');
+  const t=[];let i=0;
+  while(i<s.length){
+    const c=s[i],rest=s.slice(i);
+    if(/\s/.test(c)){i++;continue}
+    if(/[0-9.]/.test(c)){
+      let m=rest.match(/^(\d+)\/(\d+)/);
+      if(m){if(+m[2]===0)throw Error('A fraction cannot have 0 at the bottom');t.push({k:'f',v:+m[1]/+m[2]});i+=m[0].length;continue}
+      m=rest.match(/^(\d+\.?\d*|\.\d+)/);if(!m)throw Error('Check the number near “'+rest.slice(0,4)+'”');
+      t.push({k:'n',v:parseFloat(m[0])});i+=m[0].length;continue}
+    if(c==="'"||c==='"'){t.push({k:'u',v:IN_PER[c]});i++;continue}
+    if(/[a-z]/i.test(c)){const w=rest.match(/^[a-z]+/i)[0].toLowerCase();i+=w.length;
+      if(w==='x'){t.push({k:'*'});continue}
+      if(IN_PER[w]){t.push({k:'u',v:IN_PER[w]});continue}
+      throw Error('Unknown unit “'+w+'”. Use ft, in, yd, m, cm or mm');}
+    if(c==='÷'||c==='/'){t.push({k:'/'});i++;continue}
+    if('+-*()'.includes(c)){t.push({k:c});i++;continue}
+    throw Error('Unexpected “'+c+'”');
+  }
+  return t;
+}
+function ftEval(src){
+  const tk=ftTok(src);if(!tk.length)throw Error('');
+  let p=0;const peek=()=>tk[p],eat=k=>{if(tk[p]&&tk[p].k===k){p++;return true}return false};
+  const toLen=x=>x.d===0&&x.bare?{v:x.v*12,d:1}:x;
+  const add=(a,b,s)=>{
+    if(a.d!==b.d){if(a.d===1)b=toLen(b);else if(b.d===1)a=toLen(a)}
+    if(a.d!==b.d)throw Error('You can only add like with like (length + length, area + area)');
+    return{v:a.v+s*b.v,d:a.d,bare:a.bare&&b.bare}};
+  function sum(){let a=term();for(;;){if(eat('+'))a=add(a,term(),1);else if(eat('-'))a=add(a,term(),-1);else return a}}
+  function term(){let a=unary();for(;;){
+    if(eat('*')){const b=unary();a={v:a.v*b.v,d:a.d+b.d,bare:a.bare&&b.bare}}
+    else if(eat('/')){const b=unary();if(b.v===0)throw Error('Cannot divide by zero');const d=a.d-b.d;if(d<0)throw Error('Cannot divide a number by a length');a={v:a.v/b.v,d,bare:a.bare&&b.bare}}
+    else return a}}
+  function unary(){if(eat('-')){const v=unary();return{v:-v.v,d:v.d,bare:v.bare}}if(eat('+'))return unary();return atom()}
+  function atom(){
+    if(eat('(')){let v=sum();eat(')');if(peek()&&peek().k==='u'){if(v.d!==0)throw Error('A unit can only follow a plain number');v={v:v.v*tk[p++].v,d:1}}return v}
+    const items=[];
+    while(peek()&&(peek().k==='n'||peek().k==='f')){
+      const it={w:null,f:null,u:null};
+      if(peek().k==='n')it.w=tk[p++].v;
+      if(peek()&&peek().k==='f')it.f=tk[p++].v;
+      if(peek()&&peek().k==='u')it.u=tk[p++].v;
+      items.push(it);
+      if(it.u&&it.u!==12)break;
+    }
+    if(!items.length){const t=tk[p];throw Error(t?'Something is missing before “'+(t.k==='u'?'unit':t.k)+'”':'The expression is incomplete')}
+    const val=i=>(i.w||0)+(i.f||0);
+    if(items.some(i=>i.u)){let tot=0,prevFeet=false;
+      for(const i of items){
+        if(i.u){tot+=val(i)*i.u;prevFeet=i.u===12}
+        else if(prevFeet){tot+=val(i);prevFeet=false}
+        else throw Error('Mixed entry: give every number a unit, or use the Revit style 65 2 3/8 with no units')}
+      return{v:tot,d:1}}
+    if(items.length===1){const i=items[0];
+      if(i.f==null)return{v:i.w,d:0,bare:true};
+      if(i.w==null)return{v:i.f,d:1};
+      return{v:i.w*12+i.f,d:1}}
+    if(items.length===2){if(items[0].f!=null)throw Error('Put the fraction with the inches, e.g. 65 2 3/8');return{v:items[0].w*12+val(items[1]),d:1}}
+    throw Error('Too many numbers in a row. Type feet, then inches: 65 2 3/8');
+  }
+  let v=sum();if(p<tk.length)throw Error('Unexpected “'+(tk[p].k==='n'?tk[p].v:tk[p].k==='u'?'unit':tk[p].k)+'”. Is an operator missing?');
+  if(v.d===0&&v.bare&&!tk.some(t=>t.k==='*'||t.k==='/'))v={v:v.v*12,d:1};
+  return v;
+}
+function revit(inches,den){return ftin(inches,den).txt.replace('−','-').replace(/^(-?\d+)' (\d+\/\d+)"$/,'$1 0 $2').replace(/["']/g,'')}
+function ftin(inches,den){
+  const neg=inches<0,tot=Math.round(Math.abs(inches)*den)/den;
+  let ft=Math.floor(tot/12+1e-9),rem=tot-ft*12;let whole=Math.floor(rem+1e-9),num=Math.round((rem-whole)*den),d=den;
+  if(num===d){whole++;num=0}if(whole===12){ft++;whole=0}
+  if(num){const g=gcd2(num,d);num/=g;d/=g}
+  const inch=num?(whole?`${whole} ${num}/${d}`:`${num}/${d}`):`${whole}`;
+  return {txt:`${neg&&tot?'−':''}${ft}' ${inch}"`,rounded:Math.abs(tot-Math.abs(inches))>1e-9};
+}
+const ftDenEl=$('#ftDen'),ftType=$('#ftType');
+const newEntry=()=>({f:'',i:'',fr:0,frT:'',stage:'f',ftM:false,inM:false,raw:null});
+let tape=[],pend=null,done=false,total=null,E=newEntry(),typing=false,sixteen=false,ftErr='';
+const den=()=>+ftDenEl.value;
+const numMode=()=>(pend==='×'||pend==='÷')&&!E.ftM&&!E.inM&&!E.fr&&!E.raw;
+const emptyE=()=>!E.raw&&!E.f&&!E.i&&!E.fr;
+function entryVal(){
+  if(E.raw)return E.raw;if(emptyE())return null;
+  if(numMode()){const n=parseFloat(E.f);if(isNaN(n))throw Error('Type a number');return{v:n,d:0}}
+  const f=parseFloat(E.f||'0'),i=parseFloat(E.i||'0');if(isNaN(f)||isNaN(i))throw Error('Check the number');
+  return{v:f*12+i+E.fr,d:1};
+}
+function showV(x){if(x.d===1)return ftin(x.v,den()).txt;if(x.d===0)return fmt(x.v);if(x.d===2)return fmt(x.v/144)+' ft²';if(x.d===3)return fmt(x.v/1728)+' ft³';return fmt(x.v)+' in^'+x.d}
+function applyOp(op,a,b){
+  if(op==='+'||op==='−'){if(a.d!==b.d)throw Error(a.d===0||b.d===0?'Cannot add a plain number to a length. Press ft or in after the number.':'Cannot add a length to an area');return{v:a.v+(op==='+'?b.v:-b.v),d:a.d}}
+  if(op==='×')return{v:a.v*b.v,d:a.d+b.d};
+  if(b.v===0)throw Error('Cannot divide by zero');const d=a.d-b.d;if(d<0)throw Error('Cannot divide a number by a length');return{v:a.v/b.v,d};
+}
+const totalOf=l=>{let t=null;for(const it of l)t=t?applyOp(it.op,t,it.val):it.val;return t};
+function ftReset(){tape=[];pend=null;done=false;total=null;E=newEntry();ftErr=''}
+function takeTyped(){if(!typing||!ftType.value.trim())return true;try{const v=ftEval(ftType.value);E=newEntry();E.raw=v;ftType.value='';return true}catch(e){ftErr=e.message||'Check what you typed';return false}}
+function ftKey(k){
+  ftErr='';
+  if(/^[0-9.]$/.test(k)){if(done)ftReset();if(E.raw)E=newEntry();const fl=E.stage==='f'?'f':'i';if(k==='.'&&E[fl].includes('.'))return;if(E[fl].length>=8)return;E[fl]+=k;return}
+  if(k.startsWith('fr:')){if(done)ftReset();if(E.raw)E=newEntry();const [n,d]=k.slice(3).split('/');if(E.stage==='f'&&!E.ftM){E.i=E.f;E.f=''}E.fr=n/d;E.frT=n+'/'+d;E.inM=true;E.stage='i';return}
+  switch(k){
+    case 'ft':if(done)return;if(E.raw)return;if(E.stage==='f'){if(!E.f)E.f='0';E.ftM=true;E.stage='i'}return;
+    case 'in':if(done)return;if(E.raw)return;if(E.stage==='f'&&!E.ftM){E.i=E.f;E.f=''}E.inM=true;E.stage='i';return;
+    case 'bs':
+      if(done){done=false;const last=tape.pop();if(last){E=newEntry();E.raw=last.val;pend=tape.length?last.op:null}return}
+      if(E.raw){E=newEntry();return}
+      if(E.fr){E.fr=0;E.frT='';if(!E.i&&!E.ftM){E.inM=false;E.stage='f'}return}
+      if(E.stage==='i'){if(E.i){E.i=E.i.slice(0,-1);return}if(E.inM&&!E.ftM){E.inM=false;E.stage='f';return}E.stage='f';E.ftM=false;E.inM=false;return}
+      if(E.f){E.f=E.f.slice(0,-1);return}
+      if(tape.length){const last=tape.pop();E=newEntry();E.raw=last.val;pend=tape.length?last.op:null}return;
+    case 'ac':ftReset();return;
+    case '=':
+      if(!takeTyped())return;
+      try{if(!emptyE())tape.push({op:tape.length?pend:null,val:entryVal()});if(!tape.length)return;total=totalOf(tape);done=true;pend=null;E=newEntry()}catch(e){ftErr=e.message}
+      return;
+    default:{ // operators
+      if(!takeTyped())return;
+      if(done){if(total==null)return;tape=[{op:null,val:total}];done=false;total=null;E=newEntry();pend=k;return}
+      if(emptyE()){if(tape.length)pend=k;return}
+      try{tape.push({op:tape.length?pend:null,val:entryVal()});pend=k;E=newEntry()}catch(e){ftErr=e.message}
+    }
+  }
+}
+function ftPaint(){
+  $('#ftRoundLbl').textContent='±1/'+den()+'″';
+  const line=(op,t,cls='')=>`<div class="tl ${cls}"><b>${op||''}</b><span>${t}</span></div>`;
+  let tl=tape.map(it=>line(it.op,showV(it.val))).join('');
+  if(done&&total)tl+=line('=',showV(total),'tot');
+  const tp=$('#tape');tp.innerHTML=tl;tp.scrollTop=tp.scrollHeight;
+  // entry
+  const en=$('#entry');let hint='';
+  if(done){en.innerHTML='';hint='new number, or + − × ÷ to go on'}
+  else{
+    const op=tape.length?(pend||''):'';let body;
+    if(E.raw)body=`<span class="pt act">${showV(E.raw)}</span>`;
+    else if(numMode()){body=`<span class="pt act">${E.f||'0'}</span>`;hint='number · ft or in makes it a length'}
+    else{
+      const showIn=E.stage==='i'||E.inM||E.fr;
+      const fpart=(E.ftM||E.f||!showIn)?`<span class="pt ${E.stage==='f'?'act':''} ${!E.f&&!E.ftM?'dimpt':''}">${E.f||'0'}'</span>`:'';
+      const ipart=showIn?`<span class="pt ${E.stage==='i'?'act':''}">${E.i||(E.fr?'':'0')}${E.fr?(E.i?' ':'')+E.frT:''}"</span>`:'';
+      body=fpart+ipart;
+      hint=E.stage==='f'?'feet · press ft for inches':'inches · tap a fraction';
+    }
+    en.innerHTML=`<span class="op">${op}</span><span style="display:flex;gap:10px;flex-wrap:wrap">${body}</span>`;
+  }
+  en.hidden=typing&&!done;ftType.hidden=!typing||done;
+  if(typing&&!done)hint='Revit style 65 2 3/8';
+  $('#ftHint').textContent=hint;
+  // total / conversions
+  const tot=$('#ftTotal'),out=$('#ftOut');let cur=null;
+  if(ftErr){tot.className='res err';tot.textContent=ftErr;out.innerHTML='';return}
+  try{cur=done?total:(()=>{const l=tape.slice();const v=entryVal();if(v)l.push({op:l.length?pend:null,val:v});return l.length?totalOf(l):null})()}catch(e){tot.className='res err';tot.textContent=e.message;out.innerHTML='';return}
+  if(!cur){tot.className='res dim';tot.textContent='';out.innerHTML='';$('#ftDim').textContent='LENGTH';return}
+  tot.className=done?'res':'res dim';tot.textContent=(done?'':'= ')+showV(cur);
+  const L=(a,b)=>`<div><span>${a}</span><span>${b}</span></div>`;let lines='',dim='';
+  if(cur.d===0){dim='NUMBER';lines=L('pieces / ratio',fmt(cur.v))}
+  else if(cur.d===1){dim='LENGTH';lines=L('ft',fmt(cur.v/12))+L('in',fmt(cur.v))+L('m',fmt(cur.v*.0254))+L('mm',fmt(cur.v*25.4))}
+  else if(cur.d===2){dim='AREA';lines=L('m²',fmt(cur.v*.00064516))+L('yd²',fmt(cur.v/1296))+L('in²',fmt(cur.v))+L('marla',fmt(cur.v/144/272.25))}
+  else if(cur.d===3){dim='VOLUME';lines=L('m³',fmt(cur.v*1.6387064e-5))+L('yd³',fmt(cur.v/46656))+L('litre',fmt(cur.v*.016387064))+L('in³',fmt(cur.v))}
+  $('#ftDim').textContent=dim;out.innerHTML=lines;
+}
+function paintFracs(){
+  const d=sixteen?16:8,list=[];for(let n=1;n<d;n++){if(sixteen&&n%2===0)continue;const g=gcd2(n,d);list.push((n/g)+'/'+(d/g))}
+  $('#fracs').style.gridTemplateColumns=`repeat(${list.length+1},minmax(0,1fr))`;
+  $('#fracs').innerHTML=list.map(f=>`<button data-k="fr:${f}">${f}</button>`).join('')+`<button class="tog" data-k="tog">${sixteen?'8ths':'16ths'}</button>`;
+}
+const FTK=[['7'],['8'],['9'],['⌫','bs','del'],['AC','ac','del'],['4'],['5'],['6'],['×','×','op'],['÷','÷','op'],['1'],['2'],['3'],['+','+','op'],['−','−','op'],['0'],['.'],['ft','ft','fn'],['in','in','fn'],['=','=','eq']];
+$('#ftKeys').innerHTML=FTK.map(([l,k,c])=>`<button class="key ${c||''}" data-k="${k||l}">${l}</button>`).join('');
+function ftClick(e){const b=e.target.closest('button[data-k]');if(!b)return;const k=b.dataset.k;
+  if(k==='tog'){sixteen=!sixteen;paintFracs();return}
+  ftKey(k);ftPaint()}
+$('#ftKeys').addEventListener('click',ftClick);$('#fracs').addEventListener('click',ftClick);
+ftDenEl.addEventListener('change',ftPaint);
+$('#ftKbd').onclick=()=>{typing=!typing;$('#ftKbd').textContent=typing?'Keypad':'Type';if(done)ftReset();ftPaint();if(typing)ftType.focus()};
+ftType.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();ftKey('=');ftPaint()}else if('+-*/'.includes(e.key)&&ftType.value.trim()){e.preventDefault();ftKey({'+':'+','-':'−','*':'×','/':'÷'}[e.key]);ftPaint()}});
+ftType.addEventListener('input',()=>{ftErr='';ftPaint()});
+$('#ftHelp').onclick=()=>{$('#ftHelpSheet').hidden=false};
+// sample on the tape
+['6','5','ft','2','fr:3/8','+','1','0','ft','6','fr:1/4'].forEach(ftKey);
+paintFracs();
+
+/* ---------- boot ---------- */
+try{const o=run(ex.value,false);last=o.r;lastBool=o.bool;justEval=true}catch(e){}
+paint();units();ftPaint();showTab();
+</script>
+
+<script>
+/* ---------- phone / Windows app integration ---------- */
+(function(){
+  var A=window.HisabAndroid,P=window.hisabPC;
+  window.hisabBack=function(){
+    var open=[].slice.call(document.querySelectorAll('.sheet')).filter(function(s){return !s.hidden});
+    if(open.length){open[open.length-1].hidden=true;try{paint()}catch(e){}return true}
+    if(location.hash&&location.hash!=='#calc'){location.hash='calc';return true}
+    return false};
+  if(A&&A.copyText){try{Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:function(t){A.copyText(String(t));return Promise.resolve()}}})}catch(e){}}
+  if(!A&&!P)return;
+  var ver='';
+  function getVer(){if(ver)return Promise.resolve(ver);
+    if(A){try{ver=A.version()}catch(e){}return Promise.resolve(ver)}
+    return P.version().then(function(v){ver='build '+String(v).split('.').pop();return ver}).catch(function(){return ''})}
+  function doCheck(){try{if(A)A.checkUpdates();else P.checkUpdates()}catch(e){toast('Could not check for updates')}}
+  window.hisabCheckUpdates=doCheck;
+  var orig=openMode;
+  openMode=function(){orig();var b=document.querySelector('#modeSheet .body');if(!b)return;
+    b.insertAdjacentHTML('beforeend','<h3>App</h3><div class="mhead"><span class="hint" id="appVer">Hisab Calculator</span><span style="flex:1"></span><button class="op" data-appupd="1">Check for updates</button></div>');
+    getVer().then(function(v){var el=document.getElementById('appVer');if(el&&v)el.textContent='Hisab Calculator · '+v});
+    b.querySelector('[data-appupd]').addEventListener('click',doCheck)};
+})();
+</script>
+</body>
+</html>

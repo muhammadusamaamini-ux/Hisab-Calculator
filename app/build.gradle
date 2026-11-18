@@ -1,0 +1,57 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.usama.hisab'
+    compileSdk 34
+
+    defaultConfig {
+        // This ID never changes, so every update installs over the old one and keeps your data.
+        applicationId 'com.usama.hisab'
+        minSdk 24
+        targetSdk 34
+        def buildNumber = (project.findProperty('buildNumber') ?: '1').toString().toInteger()
+        versionCode buildNumber
+        versionName "build " + buildNumber
+    }
+
+    // The calculator page (web/index.html) is shared with the Windows app.
+    sourceSets {
+        main { assets.srcDirs = ['../web'] }
+    }
+
+    // One fixed signing key, so every new build installs over the old one.
+    signingConfigs {
+        release {
+            storeFile file('hisab.keystore')
+            storePassword 'hisabcalc'
+            keyAlias 'hisab'
+            keyPassword 'hisabcalc'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+        debug {
+            signingConfig signingConfigs.release
+        }
+    }
+
+    lint {
+        checkReleaseBuilds false
+        abortOnError false
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'androidx.webkit:webkit:1.11.0'
+}

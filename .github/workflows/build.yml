@@ -1,0 +1,149 @@
+name: Build Hisab Calculator (phone APK + Windows EXE)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Add the fonts (so the app looks right offline)
+        continue-on-error: true
+        run: bash tools/get-fonts.sh
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Build the phone app (APK)
+        shell: bash
+        run: |
+          set -o pipefail
+          gradle assembleRelease --no-daemon -PbuildNumber=${{ github.run_number }} 2>&1 | tee build.log
+          cp app/build/outputs/apk/release/app-release.apk HisabCalculator.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android
+          path: HisabCalculator.apk
+
+      - name: Save the log if it failed (so Claude can read it)
+        if: failure()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: failed-build-${{ github.run_number }}
+          name: Failed build ${{ github.run_number }} (log only)
+          body: This build failed. The log is attached. Not an app update.
+          files: build.log
+          prerelease: true
+          make_latest: false
+
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Add the fonts (so the app looks right offline)
+        continue-on-error: true
+        run: bash tools/get-fonts.sh
+
+      - name: Copy the calculator page into the PC app
+        run: mkdir -p pc/src/web && cp -r web/. pc/src/web/
+
+      - name: Version = 1.0.<build number>
+        working-directory: pc
+        run: npm version 1.0.${{ github.run_number }} --no-git-tag-version
+
+      - name: Write "What's new" from the commit message
+        working-directory: pc
+        run: >
+          node -e "const m=require('child_process').execSync('git log -1 --pretty=%B').toString().split(/\r?\n/).filter(l=>!/^(Co-Authored-By|Claude-Session):/.test(l)).join('\n').trim();require('fs').writeFileSync('resources/release-notes.md', m || 'Improvements')"
+
+      - name: Install
+        working-directory: pc
+        run: |
+          set -o pipefail
+          npm install --no-audit --no-fund 2>&1 | tee pc-install.log
+
+      - name: Build the PC app (EXE installer)
+        working-directory: pc
+        run: |
+          set -o pipefail
+          npx electron-builder --win --publish never 2>&1 | tee pc-build.log
+          ls dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: |
+            pc/dist/HisabCalculator-Setup.exe
+            pc/dist/HisabCalculator-Setup.exe.blockmap
+            pc/dist/latest.yml
+
+      - name: Save the log if it failed (so Claude can read it)
+        if: failure()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: failed-build-${{ github.run_number }}
+          name: Failed build ${{ github.run_number }} (log only)
+          body: This build failed. The logs are attached. Not an app update.
+          files: |
+            pc/pc-install.log
+            pc/pc-build.log
+          prerelease: true
+          make_latest: false
+
+  release:
+    needs: [ android, windows ]
+    # the phone update still goes out if only the PC build has a problem
+    if: always() && needs.android.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: android
+          path: out
+
+      - uses: actions/download-artifact@v4
+        if: needs.windows.result == 'success'
+        with:
+          name: windows
+          path: out
+
+      - name: Write "What's new" from the commit message
+        run: git log -1 --pretty=%B | grep -v -E '^(Co-Authored-By|Claude-Session):' > notes.md
+
+      - name: Publish to Releases (phone and PC update from here)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: Hisab Calculator (build ${{ github.run_number }})
+          body_path: notes.md
+          files: |
+            out/HisabCalculator.apk
+            out/HisabCalculator-Setup.exe
+            out/HisabCalculator-Setup.exe.blockmap
+            out/latest.yml
+          fail_on_unmatched_files: false
+          make_latest: true

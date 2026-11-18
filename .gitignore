@@ -1,0 +1,11 @@
+.gradle/
+build/
+app/build/
+local.properties
+*.iml
+.idea/
+web/fonts/
+pc/node_modules/
+pc/dist/
+pc/src/web/
+pc/resources/release-notes.md
