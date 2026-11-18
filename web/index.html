@@ -33,12 +33,16 @@
 html,body{height:100%}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-ui);font-size:15px;line-height:1.4;overflow:hidden}
 .app{height:100%;max-width:520px;margin:0 auto;padding-block:8px;padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:8px}
-nav{flex:0 0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--key-op);padding:3px;border-radius:11px}
+nav{flex:0 0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;background:var(--key-op);padding:3px;border-radius:11px}
 nav a{text-align:center;padding:6px 4px;border-radius:8px;color:var(--muted);text-decoration:none;font-weight:600;font-size:.88rem}
 nav a[aria-current="page"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px var(--shadow)}
 a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 section{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;gap:8px}
-#units{overflow-y:auto}
+#units,#site{overflow-y:auto}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.uh{text-transform:none;letter-spacing:0;font-weight:500;opacity:.8}
+#siteList .list{display:flex;flex-direction:column}
+#siteList .list button span:nth-child(2){font-size:1.3rem;color:var(--muted)}
 
 /* ---- scientific ---- */
 .lcd{flex:0 0 auto;background:var(--lcd);color:var(--lcd-ink);border-radius:13px;padding:6px 12px 8px;display:flex;flex-direction:column;gap:1px;min-width:0}
@@ -200,7 +204,9 @@ input[type=number]{font-family:var(--f-num)}
 /* ---- natural (textbook) display ---- */
 #calc .lcd{flex:1 1 auto;min-height:170px;padding:8px 14px 10px;gap:4px}
 #calc .keypad{flex:0 1 600px;max-height:none}
-.mexpr{font:400 1.6rem/1.2 var(--f-num);color:var(--lcd-ink);min-height:2.2em;overflow-x:auto;overflow-y:hidden;white-space:nowrap;display:flex;align-items:center;padding:6px 2px;scrollbar-width:none;cursor:text;outline:none}
+.mexpr{font:400 1.6rem/1.2 var(--f-num);color:var(--lcd-ink);min-height:2.2em;overflow:auto;white-space:nowrap;display:flex;padding:6px 2px;scrollbar-width:none;cursor:text;outline:none;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y;overscroll-behavior:contain}
+#calc .lcd>.mexpr{flex:1 1 0;min-height:2.4em}
+.mrow{display:inline-flex;align-items:center;flex:none;margin:auto auto auto 0;padding-right:.4em}
 .mexpr::-webkit-scrollbar{display:none}
 .mexpr .tk{padding:0 .015em;flex:none}
 .mexpr .mw{display:inline-flex;align-items:center;margin-right:.08em}
@@ -219,12 +225,12 @@ input[type=number]{font-family:var(--f-num)}
 @keyframes blink{50%{opacity:0}}
 @media (prefers-reduced-motion:reduce){.caret{animation:none}}
 .mexpr.done{opacity:.9}
-#calc .res{margin-top:auto;font-size:2.3rem;line-height:1.15;display:block;text-align:right;white-space:nowrap;min-height:2.8rem;overflow:hidden}
+#calc .res{margin-top:auto;font-size:2.3rem;line-height:1.15;display:block;text-align:right;white-space:nowrap;min-height:2.8rem;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;flex:none;touch-action:pan-x}
 #calc .res .fr{display:inline-flex;vertical-align:middle}
 #calc .res.dim{font-size:1.4rem;opacity:.45;line-height:1.2}
 #calc .res .fr{font-size:.85em}
 #calc .note{font-size:.8rem}
-.mexpr.mini{font-size:1rem;color:inherit;min-height:0;padding:0;overflow:visible;flex-wrap:wrap;white-space:normal;cursor:inherit}
+.mexpr.mini{font-size:1rem;color:inherit;min-height:0;padding:0;overflow:visible;flex-wrap:wrap;white-space:normal;cursor:inherit;display:inline-flex;align-items:center}
 .list .mexpr.mini{display:inline-flex}
 </style>
 </head>
@@ -235,6 +241,7 @@ input[type=number]{font-family:var(--f-num)}
     <a href="#calc" data-tab="calc">Scientific</a>
     <a href="#units" data-tab="units">Units</a>
     <a href="#feet" data-tab="feet">Feet-inches</a>
+    <a href="#site" data-tab="site">Site</a>
   </nav>
 
   <!-- SCIENTIFIC -->
@@ -296,6 +303,15 @@ input[type=number]{font-family:var(--f-num)}
     </div>
     <div class="fracs" id="fracs"></div>
     <div class="ftgrid" id="ftKeys"></div>
+  </section>
+
+  <!-- SITE: engineering calculators -->
+  <section id="site" hidden>
+    <div class="panel">
+      <h2>Site calculators</h2>
+      <div class="seg" id="siteUnits" style="grid-template-columns:repeat(2,minmax(0,1fr))"><button data-u="imp">Feet-inches</button><button data-u="met">Metric</button></div>
+      <div id="siteList"></div>
+    </div>
   </section>
 </div>
 
@@ -423,7 +439,7 @@ const sup=s=>s.replace(/×10\^(-?\d+)/,(m,d)=>'×10'+[...d].map(c=>SUP[c]).join(
 const fmtD=x=>sup(fmt(x));
 
 /* ---------- tabs ---------- */
-const TABS=['calc','units','feet'];
+const TABS=['calc','units','feet','site'];
 function showTab(){
   const t=TABS.includes(location.hash.slice(1))?location.hash.slice(1):'calc';
   TABS.forEach(id=>{$('#'+id).hidden=id!==t});
@@ -785,9 +801,11 @@ function edLeft(){const{l,i}=ED.cur;
 function edVert(dir){let l=ED.cur.l;
   for(;;){const o=owner(l);if(!o)return false;
     if(o.node.t==='frac'||o.node.t==='mixed'){
-      if(dir<0&&o.slot==='b'){const L=o.node.a;ED.cur={l:L,i:Math.min(ED.cur.i,L.length)};return true}
-      if(dir>0&&o.slot!=='b'){const L=o.node.b;ED.cur={l:L,i:Math.min(ED.cur.i,L.length)};return true}}
+      if(dir<0&&o.slot==='b'){const L=o.node.a;ED.cur={l:L,i:Math.min(ED.cur.i,L.length)};edDive(dir);return true}
+      if(dir>0&&o.slot!=='b'){const L=o.node.b;ED.cur={l:L,i:Math.min(ED.cur.i,L.length)};edDive(dir);return true}}
     l=o.plist}}
+function edDive(dir){for(let g=0;g<20;g++){const{l,i}=ED.cur;const n=l[i]&&l[i].t!=='c'?l[i]:l[i-1];
+    if(!n||!(n.t==='frac'||n.t==='mixed'))return;const L=dir>0?n.a:n.b;ED.cur={l:L,i:dir>0?0:L.length}}}
 function edPut(n,enter){const{l,i}=ED.cur;l.splice(i,0,n);if(enter&&n.t!=='c')ED.cur={l:n[TPL[n.t][0]],i:0};else ED.cur.i=i+1}
 function edDel(){const{l,i}=ED.cur;
   if(i>0){const n=l[i-1];
@@ -893,7 +911,7 @@ function resultHTML(){
       if(mode==='mixed'&&a>d){const w=Math.floor(a/d);return s+w+fr(a-w*d)}return s+fr(a)}}
   return esc(resultText())}
 function fitRes(r){r.style.fontSize='';let fs=parseFloat(getComputedStyle(r).fontSize);while(r.scrollWidth>r.clientWidth+1&&fs>15){fs-=2;r.style.fontSize=fs+'px'}}
-function paintExpr(){HIT=[];exEl.innerHTML=edHTML(ED.root,!justEval,true)||'';exEl.classList.toggle('done',justEval);
+function paintExpr(){HIT=[];exEl.innerHTML='<div class="mrow">'+(edHTML(ED.root,!justEval,true)||'')+'</div>';exEl.classList.toggle('done',justEval);
   const c=exEl.querySelector('.caret');if(c)c.scrollIntoView({block:'nearest',inline:'nearest'});else if(justEval)exEl.scrollLeft=0}
 function altNote(){
   if(last==null||lastBool)return '';
@@ -934,7 +952,7 @@ function doSolve(){
 }
 function currentValue(){if(justEval&&last!=null)return last;if(!ex.value.trim())return ans;doEq();return err?null:last}
 function loadHist(i){const h=hist[i];if(h.t)edLoad(h.t);else edSetText(h.e.replace(/^SOLVE\s+/,''));justEval=false;err='';note=''}
-function insertText(t){startNew(t);ins(t);err=''}
+function insertText(t){startNew(t);ins(t);err='';hIdx=-1}
 function act(a){
   if(a.startsWith('ins:')){insertText(a.slice(4));return}
   if(a.startsWith('var:')){startNew('');ins(a.slice(4));err='';return}
@@ -977,7 +995,7 @@ function act(a){
     case 'sd':if(justEval&&last!=null&&!isC(last)&&!lastBool){const f=toFrac(last);if(!f||f[1]===1){mode='dec';toast('This answer has no fraction form');return}mode=(mode==='frac'||mode==='mixed')?'dec':'frac'}return;
     case 'mixed':if(justEval&&last!=null&&!isC(last)&&!lastBool){const f=toFrac(last);if(!f||f[1]===1){toast('This answer has no fraction form');return}mode=mode==='mixed'?'frac':'mixed'}return;
     case 'mplus':case 'mminus':{const v=currentValue();if(v==null)return;vars.M=a==='mplus'?cadd(vars.M,v):csub(vars.M,v);ans=v;last=v;justEval=true;mode='dec';note=`M = ${fmtVal(vars.M)}`;saveVars();return}
-    case 'bs':if(justEval){justEval=false;note=''}bs();err='';return;
+    case 'bs':if(justEval){justEval=false;note=''}hIdx=-1;bs();err='';return;
     case 'ac':setVal(ex,'');err='';note='';justEval=false;mode='dec';hyp=false;return;
     case 'clrall':VARN.forEach(v=>vars[v]=0);ans=0;preAns=0;hist=[];store.set('hist',hist);saveVars();setVal(ex,'');last=null;err='';note='';justEval=false;toast('Cleared memory, variables and history');return;
     case 'copy':{if(!(justEval&&last!=null)&&edIsEmpty()){toast('Nothing to copy yet');return}
@@ -986,9 +1004,9 @@ function act(a){
       if(navigator.clipboard)navigator.clipboard.writeText(txt).then(()=>toast('Copied '+txt),()=>toast('Copied inside the calculator. Use ALPHA 0 to paste.'));else toast('Copied inside the calculator. Use ALPHA 0 to paste.');return}
     case 'paste':if(!clip){toast('Nothing copied yet. Use SHIFT 0 (COPY) first.');return}insertText(clip);return;
     case 'eq':doEq();return;
-    case 'up':if(!justEval&&edVert(-1))return;if(!hist.length){toast('No history yet');return}hIdx=Math.min(hIdx+1,hist.length-1);loadHist(hIdx);return;
-    case 'down':if(!justEval&&edVert(1))return;if(hIdx<=0){hIdx=-1;setVal(ex,'');justEval=false;return}hIdx--;loadHist(hIdx);return;
-    case 'left':case 'right':{if(justEval){justEval=false;note='';ED.cur={l:ED.root,i:a==='left'?ED.root.length:0};return}if(a==='left')edLeft();else edRight();return}
+    case 'up':if(!justEval&&!edIsEmpty()&&hIdx<0){edVert(-1);return}if(!hist.length){toast('No history yet');return}hIdx=Math.min(hIdx+1,hist.length-1);loadHist(hIdx);return;
+    case 'down':if(!justEval&&!edIsEmpty()&&hIdx<0){edVert(1);return}if(hIdx<=0){hIdx=-1;setVal(ex,'');justEval=false;return}hIdx--;loadHist(hIdx);return;
+    case 'left':case 'right':{hIdx=-1;if(justEval){justEval=false;note='';ED.cur={l:ED.root,i:a==='left'?ED.root.length:0};return}if(a==='left')edLeft();else edRight();return}
     case 'angle':ang=ang==='DEG'?'RAD':ang==='RAD'?'GRA':'DEG';store.set('ang',ang);toast('Angle unit: '+({DEG:'degrees',RAD:'radians',GRA:'grads'})[ang]);return;
   }
 }
@@ -1012,7 +1030,7 @@ $('#calc').addEventListener('click',e=>{
   const pd=e.target.closest('[data-pad]');if(pd){act(pd.dataset.pad);paint();return}
   const k=e.target.closest('.key');if(!k)return;if(lpFired){lpFired=false;return}pressKey(ALLK[+k.dataset.i]);paint()});
 $('#stAng').addEventListener('click',()=>{act('angle');paint()});
-exEl.addEventListener('click',e=>{const t=e.target.closest('[data-h]');
+exEl.addEventListener('click',e=>{const t=e.target.closest('[data-h]');hIdx=-1;
   if(justEval){justEval=false;note=''}
   if(t){const h=HIT[+t.dataset.h];if(h){let i=h.i;if(t.classList.contains('tk')){const rc=t.getBoundingClientRect();if(e.clientX>rc.left+rc.width/2)i++}ED.cur={l:h.l,i}}}
   else ED.cur={l:ED.root,i:ED.root.length};
@@ -1610,6 +1628,77 @@ $('#ftHelp').onclick=()=>{$('#ftHelpSheet').hidden=false};
 // sample on the tape
 ['6','5','ft','2','fr:3/8','+','1','0','ft','6','fr:1/4'].forEach(ftKey);
 paintFracs();
+
+/* ================= SITE: engineering calculators =================
+   Every calculator is one entry in SITE_CALCS. See docs/ADDING-CALCULATORS.md.
+   Inputs are read in the chosen unit system and converted to SI (metres, m², m³, kg) before calc() runs.
+   calc() returns rows: {label, v, kind} where kind is len | area | vol | mass | count | num | text. */
+const SITE_CALCS=[
+  {id:'concrete-volume',group:'Concrete',name:'Concrete volume',
+   about:'Volume of a rectangular pour such as a slab, wall, beam or footing.',
+   inputs:[
+     {k:'L',label:'Length',type:'len',imp:'20',met:'6'},
+     {k:'W',label:'Width',type:'len',imp:'12',met:'3.6'},
+     {k:'T',label:'Thickness or depth',type:'len',imp:'0 5',met:'0.125'},
+     {k:'n',label:'Number of pieces',type:'num',def:'1'},
+     {k:'waste',label:'Wastage',type:'pct',def:'5'}],
+   calc:v=>{const V=v.L*v.W*v.T*v.n;return[
+     {label:'Wet volume',v:V,kind:'vol'},
+     {label:'With wastage',v:V*(1+v.waste/100),kind:'vol'}]}}
+];
+const SITE=Object.assign({units:'imp',vals:{}},store.get('site',{}));
+const saveSite=()=>store.set('site',SITE);
+const M_PER_FT=0.3048,FT3_PER_M3=35.3146667,FT2_PER_M2=10.7639104,LB_PER_KG=2.20462262;
+function siteParse(inp,raw){
+  const s=String(raw??'').trim();if(s==='')throw Error(`Enter ${inp.label.toLowerCase()}`);
+  if(inp.type==='len'){
+    if(SITE.units==='imp'){const r=ftEval(s);if(r.d!==1)throw Error(`${inp.label}: type a length like 12 6 (12 ft 6 in)`);return r.v*0.0254}
+    return rl(run(s,false).r,inp.label)}
+  if(inp.type==='area'){const a=rl(run(s,false).r,inp.label);return SITE.units==='imp'?a/FT2_PER_M2:a}
+  if(inp.type==='vol'){const a=rl(run(s,false).r,inp.label);return SITE.units==='imp'?a/FT3_PER_M3:a}
+  if(inp.type==='mass'){const a=rl(run(s,false).r,inp.label);return SITE.units==='imp'?a/LB_PER_KG:a}
+  if(inp.type==='select')return s;
+  return rl(run(s,false).r,inp.label);
+}
+const unitHint=inp=>({len:SITE.units==='imp'?'ft in':'m',area:SITE.units==='imp'?'ft²':'m²',vol:SITE.units==='imp'?'cft':'m³',mass:SITE.units==='imp'?'lb':'kg',pct:'%'})[inp.type]||inp.unit||'';
+const r4=x=>fmtD(nice(+x.toPrecision(6)));
+function siteFmt(row){const v=row.v,imp=SITE.units==='imp';
+  switch(row.kind){
+    case'len':{const f=ftin(v/0.0254,16).txt;return imp?[f,r4(v)+' m']:[r4(v)+' m',f]}
+    case'area':return imp?[r4(v*FT2_PER_M2)+' ft²',r4(v)+' m²']:[r4(v)+' m²',r4(v*FT2_PER_M2)+' ft²'];
+    case'vol':return imp?[r4(v*FT3_PER_M3)+' cft',r4(v)+' m³']:[r4(v)+' m³',r4(v*FT3_PER_M3)+' cft'];
+    case'mass':return imp?[r4(v*LB_PER_KG)+' lb',r4(v)+' kg']:[r4(v)+' kg',r4(v*LB_PER_KG)+' lb'];
+    case'count':return[fmtD(Math.ceil(v-1e-9))+(row.unit?' '+row.unit:''),''];
+    case'text':return[String(v),''];
+    default:return[r4(v)+(row.unit?' '+row.unit:''),''];
+  }}
+function siteValue(row){const imp=SITE.units==='imp',v=row.v;
+  return row.kind==='vol'?(imp?v*FT3_PER_M3:v):row.kind==='area'?(imp?v*FT2_PER_M2:v):row.kind==='len'?(imp?v/M_PER_FT:v):row.kind==='mass'?(imp?v*LB_PER_KG:v):row.kind==='count'?Math.ceil(v-1e-9):v}
+function paintSiteList(){
+  const groups=[...new Set(SITE_CALCS.map(c=>c.group))];
+  $('#siteList').innerHTML=groups.map(g=>`<h3>${esc(g)}</h3><div class="list">${SITE_CALCS.filter(c=>c.group===g).map(c=>`<button data-calc="${c.id}"><span><b>${esc(c.name)}</b></span><span>›</span><small>${esc(c.about)}</small></button>`).join('')}</div>`).join('')+
+    '<p class="hint">More calculators (bricks, plaster, steel, excavation…) can be added here on request.</p>';
+  document.querySelectorAll('#siteUnits button').forEach(b=>b.classList.toggle('on',b.dataset.u===SITE.units));
+}
+function openSiteCalc(id){
+  const c=SITE_CALCS.find(x=>x.id===id);if(!c)return;
+  const b=sheet('siteSheet',c.name),vals=SITE.vals[id]=SITE.vals[id]||{};
+  const dv=inp=>{const key=inp.k+'_'+(inp.type==='len'||inp.type==='area'||inp.type==='vol'||inp.type==='mass'?SITE.units:'x');return vals[key]??(SITE.units==='imp'?inp.imp:inp.met)??inp.def??''};
+  b.innerHTML=`<p class="hint">${esc(c.about)}</p>${segHTML('siteU',[['imp','Feet-inches'],['met','Metric']],SITE.units)}
+  <div class="sgrid">${c.inputs.map(inp=>`<label>${esc(inp.label)}${unitHint(inp)?` <span class="uh">${esc(unitHint(inp))}</span>`:''}${inp.type==='select'?`<select data-k="${inp.k}">${inp.options.map(o=>`<option ${o===dv(inp)?'selected':''}>${esc(o)}</option>`).join('')}</select>`:`<input class="ti" type="text" inputmode="${inp.type==='len'&&SITE.units==='imp'?'text':'decimal'}" data-k="${inp.k}" value="${esc(dv(inp))}">`}</label>`).join('')}</div>
+  ${SITE.units==='imp'&&c.inputs.some(i=>i.type==='len')?'<p class="hint">Lengths are feet, then inches: 12 6 is 12 ft 6 in, 0 4 1/2 is 4½ in.</p>':''}
+  <div class="result" id="siteOut"></div>`;
+  const out=()=>{try{const v={};c.inputs.forEach(inp=>{v[inp.k]=siteParse(inp,b.querySelector(`[data-k="${inp.k}"]`).value)});
+      const rows=c.calc(v);$('#siteOut').innerHTML=`<div class="kv">${rows.map(r=>{const[a,s2]=siteFmt(r);return `<span>${esc(r.label)}</span><span>${esc(a)}${s2?`<br><small style="font-weight:400;color:var(--muted)">${esc(s2)}</small>`:''}</span>${r.kind==='text'?'<span></span>':`<button class="ins sm" data-ins="${esc(numIns(siteValue(r)))}">Use</button>`}`}).join('')}</div>`}
+    catch(e){$('#siteOut').innerHTML=`<p class="hint" style="color:var(--bad)">${esc(e.message)}</p>`}};
+  b.oninput=b.onchange=e=>{const k=e.target.dataset.k;if(!k)return;const inp=c.inputs.find(i=>i.k===k);vals[k+'_'+(['len','area','vol','mass'].includes(inp.type)?SITE.units:'x')]=e.target.value;saveSite();out()};
+  b.onclick=e=>{const s=e.target.closest('[data-set]');if(s){SITE.units=s.dataset.v;saveSite();paintSiteList();openSiteCalc(id);return}
+    const x=e.target.closest('[data-ins]');if(x){closeSheet('siteSheet');location.hash='calc';edClear();justEval=false;err='';note='';insertText(x.dataset.ins);paint()}};
+  out();
+}
+$('#siteList').addEventListener('click',e=>{const b=e.target.closest('[data-calc]');if(b)openSiteCalc(b.dataset.calc)});
+$('#siteUnits').addEventListener('click',e=>{const b=e.target.closest('[data-u]');if(!b)return;SITE.units=b.dataset.u;saveSite();paintSiteList()});
+paintSiteList();
 
 /* ---------- boot ---------- */
 
