@@ -38,7 +38,29 @@ nav a{text-align:center;padding:6px 4px;border-radius:8px;color:var(--muted);tex
 nav a[aria-current="page"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px var(--shadow)}
 a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 section{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;gap:8px}
-#units,#site{overflow-y:auto}
+#units,#site,#brick{overflow-y:auto}
+.sgrid .full{grid-column:1/-1}
+.wcard{border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px;background:var(--key)}
+.whead{display:flex;gap:8px;align-items:center}
+.whead .wname{text-align:left;font-weight:700;flex:1}
+.wx{flex-direction:row;align-items:center;gap:6px;white-space:nowrap}
+.wx input{width:4rem}
+.ohead{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.otbl{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) minmax(0,1fr) minmax(0,.8fr) 1.6rem;gap:5px;align-items:center}
+.wout{display:flex;flex-wrap:wrap;gap:4px 14px;font:600 .9rem var(--f-num);border-top:1px solid var(--line);padding-top:7px}
+.wout .hint{font:400 .8rem var(--f-ui);width:100%}
+.assume summary{cursor:pointer;font-weight:600;color:var(--muted);padding:4px 0}
+.assume[open] summary{margin-bottom:8px}
+.civ{background:var(--soft);border-color:var(--accent)}
+table.boq{width:100%;border-collapse:collapse;font-size:.86rem}
+.boq th,.boq td{padding:6px 4px;border-top:1px solid var(--line);text-align:left;vertical-align:middle}
+.boq th{color:var(--muted);font-weight:600;font-size:.78rem}
+.boq td:nth-child(3),.boq td:nth-child(5){font-family:var(--f-num);white-space:nowrap}
+.boq td:last-child,.boq th:last-child{text-align:right}
+.boq small{color:var(--muted);display:block;font-size:.72rem}
+.boq .rate{width:5.2rem;padding:5px 4px}
+.boq .st td{font-weight:600}
+.boq .gt td{font-weight:700;font-size:1rem;border-top:2px solid var(--ink)}
 .sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
 .uh{text-transform:none;letter-spacing:0;font-weight:500;opacity:.8}
 #siteList .list{display:flex;flex-direction:column}
@@ -317,6 +339,23 @@ input[type=number]{font-family:var(--f-num)}
     <div class="ftgrid" id="ftKeys"></div>
   </section>
 
+  <!-- BRICKWORK ESTIMATE -->
+  <section id="brick" hidden>
+    <div class="backbar"><button class="backbtn" data-go="calc" aria-label="Back to the scientific calculator">‹ Calculator</button><b>Brickwork estimate</b><button class="backbtn" data-go="mode">MODE</button></div>
+    <div class="panel"><h2>Bricks and mortar</h2><div id="brSetup"></div></div>
+    <div class="panel"><h2>Walls</h2>
+      <p class="hint">Add each wall. If several walls are the same, enter it once and set <b>Same walls ×</b>. Openings of the same size go in one row with <b>How many</b>.</p>
+      <div id="brWalls"></div>
+      <button class="op primary" data-addwall="1">+ Add wall</button>
+    </div>
+    <div class="panel"><h2>Quantities</h2><div id="brSum"></div></div>
+    <div class="panel"><h2>Bill of quantities</h2>
+      <p class="hint">Starting rates are 2026 Lahore market rates: A-class bricks Rs 17,000–20,000 per 1000 (Oct 2026), cement Rs 1,350 a bag and river sand Rs 65 a cft (Jul 2026), mason Rs 1,500–1,800 a day. The helper rate is an estimate. Change any rate to your city's.</p>
+      <div id="brBoq"></div>
+      <div class="row" style="gap:6px"><button id="brCopy" class="op primary">Copy BOQ</button><button id="brNew" class="op">Start a new estimate</button></div>
+    </div>
+  </section>
+
   <!-- SITE: engineering calculators -->
   <section id="site" hidden>
     <div class="backbar"><button class="backbtn" data-go="calc" aria-label="Back to the scientific calculator">‹ Calculator</button><b>Site calculators</b><button class="backbtn" data-go="mode">MODE</button></div>
@@ -355,7 +394,7 @@ input[type=number]{font-family:var(--f-num)}
     <div class="chips" id="sciEx"></div>
     <h3>Top keys</h3>
     <dl class="guide">
-      <dt>MODE</dt><dd>Setup: COMP or CMPLX, angle unit, Fix/Sci decimals, fraction or decimal answers. Also opens UNITS, FEET-INCHES, SITE, EQN, MATRIX, VECTOR, STAT, DISTR and TABLE.</dd>
+      <dt>MODE</dt><dd>Civil engineering calculators (BRICKWORK, CONCRETE), UNITS, FEET-INCHES, EQN, MATRIX, VECTOR, STAT, DISTR, TABLE, plus angle unit, Fix/Sci decimals and fraction or decimal answers.</dd>
       <dt>2nd</dt><dd>List of every function. Tap one to type it.</dd>
       <dt>▲ ▼ ◀ ▶</dt><dd>▲▼ step through past calculations, ◀▶ move the cursor</dd>
       <dt>CALC</dt><dd>Works out an expression for values you enter, e.g. 2X+Y. Also stores Y=2X+3 into Y.</dd>
@@ -371,12 +410,12 @@ input[type=number]{font-family:var(--f-num)}
       <dt>x² · x³ · 0.‾3</dt><dd>Powers. ALPHA x² types the recurring bar: 0.1‾6 means 0.1666…</dd>
       <dt>xʸ · ˣ√y</dt><dd>Any power, and any root ˣ√(n, value)</dd>
       <dt>log · ln · 10ˣ · eˣ</dt><dd>Logs and their inverses</dd>
-      <dt>(−) · ∠</dt><dd>Negative sign. SHIFT gives ∠ for polar complex numbers (5∠53.13).</dd>
+      <dt>(−)</dt><dd>Negative sign</dd>
       <dt>°′″ · FACT</dt><dd>Type angles as 30°15′20″. After =, it converts the answer to degrees-minutes-seconds. SHIFT gives prime factors (FACT).</dd>
       <dt>hyp · |x|</dt><dd>hyp then sin/cos/tan gives sinh/cosh/tanh. SHIFT gives the absolute value.</dd>
       <dt>sin cos tan</dt><dd>Hold or SHIFT for sin⁻¹, cos⁻¹, tan⁻¹</dd>
       <dt>RCL · STO · CLRv</dt><dd>See and edit variables, store the answer in one, or clear them all</dd>
-      <dt>ENG · i · cot</dt><dd>ENG shows ×10³ steps (press again to move). SHIFT types i for complex numbers. ALPHA gives cot.</dd>
+      <dt>ENG · cot</dt><dd>ENG shows ×10³ steps (press again to move). ALPHA gives cot.</dd>
       <dt>( ) · % · , · cot⁻¹</dt><dd>Brackets, percent, the comma between values, and cot⁻¹</dd>
       <dt>S⇔D</dt><dd>After =, switch between fraction and decimal. SHIFT switches mixed and improper fractions.</dd>
       <dt>M+ · M−</dt><dd>Add or subtract the answer to memory M (running totals)</dd>
@@ -389,7 +428,6 @@ input[type=number]{font-family:var(--f-num)}
       <dt>MATRIX · VECTOR</dt><dd>Edit matrices A, B (up to 4×4): +, −, ×, determinant, inverse, transpose, solve A·x = B. Vectors: dot, cross, length, angle.</dd>
       <dt>FUNC</dt><dd>A table of values for f(X) and g(X) from a start to an end value</dd>
       <dt>STAT</dt><dd>Mean, standard deviation, quartiles, sums. 2-VAR also gives the line of best fit y = a + bx and r.</dd>
-      <dt>CMPLX</dt><dd>Turns complex numbers on, sets a+bi or r∠θ answers, and has Arg, Conj, Real, Imag</dd>
       <dt>DISTR</dt><dd>Normal, inverse normal, binomial and Poisson probabilities</dd>
       <dt>nPr nCr GCD LCM</dt><dd>Permutations, combinations, greatest common divisor, least common multiple</dd>
       <dt>Pol · Rec</dt><dd>Pol(Δx, Δy) gives distance and angle. Rec(distance, angle) gives Δx and Δy (surveying). Answers go into X and Y.</dd>
@@ -453,7 +491,7 @@ const sup=s=>s.replace(/×10\^(-?\d+)/,(m,d)=>'×10'+[...d].map(c=>SUP[c]).join(
 const fmtD=x=>sup(fmt(x));
 
 /* ---------- tabs ---------- */
-const TABS=['calc','units','feet','site'];
+const TABS=['calc','units','feet','site','brick'];
 function showTab(){
   const t=TABS.includes(location.hash.slice(1))?location.hash.slice(1):'calc';
   TABS.forEach(id=>{$('#'+id).hidden=id!==t});
@@ -463,7 +501,7 @@ addEventListener('hashchange',showTab);
 
 /* ================= SCIENTIFIC ENGINE ================= */
 let ang=store.get('ang','DEG');
-const cfg=Object.assign({cmplx:false,disp:'norm',dig:4,frac:'auto',polar:false},store.get('cfg',{}));
+const cfg=Object.assign({cmplx:false,disp:'norm',dig:4,frac:'auto',polar:false},store.get('cfg',{}));cfg.cmplx=false;cfg.polar=false;
 const saveCfg=()=>store.set('cfg',cfg);
 const VARN=['A','B','C','D','E','F','X','Y','M','T'];
 let vars=Object.assign(Object.fromEntries(VARN.map(v=>[v,0])),store.get('vars',{}));
@@ -477,7 +515,7 @@ const r10=x=>{if(!isFinite(x))return x;if(Math.abs(x)<1e-11)return 0;return pars
 const Z0='A fraction cannot have 0 at the bottom';
 
 /* ---- complex numbers ---- */
-const NEEDC='The answer is not a real number. Turn on CMPLX (SHIFT 2 or MODE) to get complex answers.';
+const NEEDC='The answer is not a real number (for example the square root of a negative number).';
 const isC=v=>v!==null&&typeof v==='object';
 function C(re,im){const s=Math.max(Math.abs(re),Math.abs(im));if(im===0||Math.abs(im)<=1e-13*s)return re;if(Math.abs(re)<=1e-13*s)re=0;return{re,im}}
 const Re=v=>isC(v)?v.re:v, Im=v=>isC(v)?v.im:0;
@@ -766,14 +804,14 @@ const UP=[
   {m:'xʸ',k:'ins:^(',s:['ˣ√y','ins:ˣ√(']},
   {m:'log',k:'ins:log(',s:['10ˣ','ins:10^(']},
   {m:'ln',k:'ins:ln(',s:['eˣ','ins:e^('],a:['T','var:T']},
-  {m:'(−)',k:'ins:-',s:['∠','ins:∠'],a:['A','var:A']},
+  {m:'(−)',k:'ins:-',a:['A','var:A']},
   {m:'°′″',k:'dms',s:['FACT','fact'],a:['B','var:B']},
   {m:'hyp',k:'hyp',s:['|x|','ins:Abs('],a:['C','var:C']},
   {m:'sin',k:'trig:sin',s:['sin⁻¹','itrig:sin'],a:['D','var:D']},
   {m:'cos',k:'trig:cos',s:['cos⁻¹','itrig:cos'],a:['E','var:E']},
   {m:'tan',k:'trig:tan',s:['tan⁻¹','itrig:tan'],a:['F','var:F']},
   {m:'RCL',k:'vars',s:['STO','sto'],a:['CLRv','clrv']},
-  {m:'ENG',k:'eng',s:['i','ins:i'],a:['cot','ins:cot(']},
+  {m:'ENG',k:'eng',a:['cot','ins:cot(']},
   {m:'(',k:'ins:(',s:['%','ins:%'],a:['cot⁻¹','ins:cot⁻¹(']},
   {m:')',k:'ins:)',s:[',','ins:, '],a:['X','var:X']},
   {m:'S⇔D',k:'sd',s:['a b/c⇔d/c','mixed'],a:['Y','var:Y']},
@@ -782,7 +820,7 @@ const UP=[
 const NP=[
   {m:'7',s:['CONST','const']},{m:'8',s:['CONV','conv'],a:['SI','si']},{m:'9',s:['Limit','ins:lim('],a:['∞','ins:∞']},{m:'⌫',k:'bs',c:'del',aria:'Delete'},{m:'AC',k:'ac',s:['CLR ALL','clrall'],c:'del'},
   {m:'4',s:['MATRIX','matrix']},{m:'5',s:['VECTOR','vector']},{m:'6',s:['FUNC','func'],a:['HELP','help']},{m:'×',k:'ins:×',s:['nPr','ins:nPr('],a:['GCD','ins:GCD(']},{m:'÷',k:'ins:÷',s:['nCr','ins:nCr('],a:['LCM','ins:LCM(']},
-  {m:'1',s:['STAT','stat']},{m:'2',s:['CMPLX','cmplx']},{m:'3',s:['DISTR','distr']},{m:'+',k:'ins:+',s:['Pol','ins:Pol('],a:['Ceil','ins:Ceil(']},{m:'−',k:'ins:−',s:['Rec','ins:Rec('],a:['Floor','ins:Floor(']},
+  {m:'1',s:['STAT','stat']},{m:'2'},{m:'3',s:['DISTR','distr']},{m:'+',k:'ins:+',s:['Pol','ins:Pol('],a:['Ceil','ins:Ceil(']},{m:'−',k:'ins:−',s:['Rec','ins:Rec('],a:['Floor','ins:Floor(']},
   {m:'0',s:['COPY','copy'],a:['PASTE','paste']},{m:'.',s:['Ran#','ins:Ran#'],a:['RanInt','ins:RanInt(']},{m:'Exp',k:'ins:ᴇ',s:['π','ins:π'],a:['e','ins:e'],c:'small'},{m:'Ans',k:'ins:Ans',s:['PreAns','ins:PreAns'],c:'small'},{m:'=',k:'eq',s:['History','hist']}
 ];
 const ALLK=[];
@@ -987,6 +1025,8 @@ function act(a){
     case 'conv':case 'units':location.hash='units';return;
     case 'feet':location.hash='feet';return;
     case 'site':location.hash='site';return;
+    case 'brick':location.hash='brick';return;
+    case 'concrete':openSiteCalc('concrete-volume');return;
     case 'vars':openVars();return;
     case 'sto':sto=true;toast('STO: now press a variable key (ALPHA letters A–F, X, Y, M, T)');return;
     case 'clrv':VARN.forEach(v=>vars[v]=0);saveVars();toast('Variables A–F, X, Y, M, T set to 0');return;
@@ -995,7 +1035,6 @@ function act(a){
     case 'stat':openStat();return;
     case 'distr':openDistr();return;
     case 'func':openTable();return;
-    case 'cmplx':openCmplx();return;
     case 'help':$('#helpSheet').hidden=false;return;
     case 'hist':paintHist();$('#histSheet').hidden=false;return;
     case 'dms':
@@ -1111,22 +1150,23 @@ function openConst(){
 $('#constList').addEventListener('click',e=>{const b=e.target.closest('[data-ins]');if(b)insertFrom('constSheet',b.dataset.ins)});
 
 /* help examples */
-const SEX=['2 3⁄4+1⁄2','0.1‾6×3','sin⁻¹(0.5)','√(3²+4²)','30°15′20″+10°50′','∫(X², 0, 3)','d/dx(X³, 2)','Σ(X, 1, 10)','lim(sin(X)⁄X, 0)','X²−5X+6=0','Pol(30, 40)','(3+4i)×(1−2i)','5∠53.13','17÷R5','2.5ᴇ3×1.2','5>3'];
+const SEX=['2 3⁄4+1⁄2','0.1‾6×3','sin⁻¹(0.5)','√(3²+4²)','30°15′20″+10°50′','∫(X², 0, 3)','d/dx(X³, 2)','Σ(X, 1, 10)','lim(sin(X)⁄X, 0)','X²−5X+6=0','Pol(30, 40)','17÷R5','2.5ᴇ3×1.2','5>3'];
 $('#sciEx').innerHTML=SEX.map(x=>`<button>${esc(x)}</button>`).join('');
-$('#sciEx').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const t=b.textContent;if(t.includes('i')&&!cfg.cmplx&&/\di|i\)/.test(t)){cfg.cmplx=true;saveCfg()}setVal(ex,t);justEval=false;err='';note=t.includes('=')?'Press SHIFT CALC (SOLVE) to find X':'';$('#helpSheet').hidden=true;paint()});
+$('#sciEx').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const t=b.textContent;setVal(ex,t);justEval=false;err='';note=t.includes('=')?'Press SHIFT CALC (SOLVE) to find X':'';$('#helpSheet').hidden=true;paint()});
 
 /* MODE */
 const segHTML=(key,opts,cur)=>`<div class="seg" style="grid-template-columns:repeat(${opts.length},minmax(0,1fr))">${opts.map(([v,l])=>`<button data-set="${key}" data-v="${v}" class="${String(cur)===String(v)?'on':''}">${l}</button>`).join('')}</div>`;
 function openMode(){
   const b=sheet('modeSheet','MODE and setup');
-  b.innerHTML=`<h3>Calculation</h3>${segHTML('cmplx',[[0,'COMP · real numbers'],[1,'CMPLX · complex']],cfg.cmplx?1:0)}
+  b.innerHTML=`<h3>Civil engineering</h3>
+  <div class="opgrid">${[['brick','BRICKWORK · bricks, mortar, BOQ'],['concrete','CONCRETE · volume']].map(([k,l])=>`<button class="op civ" data-act="${k}">${l}</button>`).join('')}</div>
   <h3>Calculators</h3>
-  <div class="opgrid">${[['units','UNITS · conversion'],['feet','FEET-INCHES'],['site','SITE · engineering'],['eqn','EQN · equations'],['matrix','MATRIX'],['vector','VECTOR'],['stat','STAT'],['distr','DISTR'],['func','TABLE · f(x)']].map(([k,l])=>`<button class="op" data-act="${k}">${l}</button>`).join('')}</div>
+  <div class="opgrid">${[['units','UNITS · conversion'],['feet','FEET-INCHES'],['eqn','EQN · equations'],['matrix','MATRIX'],['vector','VECTOR'],['stat','STAT'],['distr','DISTR'],['func','TABLE · f(x)']].map(([k,l])=>`<button class="op" data-act="${k}">${l}</button>`).join('')}</div>
   <h3>Angle unit</h3>${segHTML('ang',[['DEG','Degrees'],['RAD','Radians'],['GRA','Grads']],ang)}
   <h3>Number format</h3>${segHTML('disp',[['norm','Normal'],['fix','Fix decimals'],['sci','Sci notation']],cfg.disp)}
   ${cfg.disp!=='norm'?`<label>${cfg.disp==='fix'?'Decimal places':'Significant digits'} <select id="digSel">${(cfg.disp==='fix'?[0,1,2,3,4,5,6,7,8,9]:[1,2,3,4,5,6,7,8,9,10]).map(n=>`<option ${n===cfg.dig?'selected':''}>${n}</option>`).join('')}</select></label>`:''}
   <h3>Answers</h3>${segHTML('frac',[['auto','Fraction when I type one'],['always','Always fraction'],['deci','Always decimal']],cfg.frac)}
-  <h3>Complex answers</h3>${segHTML('polar',[[0,'a + bi'],[1,'r∠θ']],cfg.polar?1:0)}`;
+`;
   b.onclick=e=>{const s=e.target.closest('[data-set]'),o=e.target.closest('[data-act]');
     if(o){closeSheet('modeSheet');act(o.dataset.act);paint();return}
     if(!s)return;const k=s.dataset.set,v=s.dataset.v;
@@ -1144,7 +1184,6 @@ const CAT=[['Trigonometry',['sin(','cos(','tan(','cot(','sec(','csc(','sin⁻¹(
  ['Powers, roots and logs',['²','³','⁻¹','^(','√(','∛(','ˣ√(','log(','ln(','logₓ(','10^(','e^(']],
  ['Calculus',['∫(','d/dx(','Σ(','Π(','lim(']],
  ['Numbers',['Abs(','Int(','Ceil(','Floor(','mod(','GCD(','LCM(','nPr(','nCr(','!','%','÷R','⁄','‾']],
- ['Complex',['i','∠','Arg(','Conj(','Real(','Imag(']],
  ['Coordinates and random',['Pol(','Rec(','Ran#','RanInt(']],
  ['Values',['π','e','∞','Ans','PreAns',', ']],
  ['Compare',['>','<','≥','≤','≠','=']],
@@ -1737,6 +1776,190 @@ $('#siteUnits').addEventListener('click',e=>{const b=e.target.closest('[data-u]'
 paintSiteList();
 
 document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(!g)return;location.hash='calc';if(g.dataset.go==='mode')setTimeout(()=>{openMode();paint()},0)});
+/* ================= BRICKWORK ESTIMATE =================
+   Method (standard estimating practice):
+   bricks = net wall volume ÷ volume of one brick with its mortar joint
+   wet mortar = net volume − volume of the bricks themselves
+   dry mortar = wet mortar × 1.33 (bulking and voids) × (1 + mortar wastage)
+   cement = dry mortar × c/(c+s); one 50 kg bag = 50 ÷ 1440 kg/m³ = 0.0347 m³; sand = dry mortar × s/(c+s)
+   water for mixing = water–cement ratio × cement weight
+   labour = 1.05 mason-days and 2.2 helper-days per m³ (rate analysis for 10 m³ of brickwork in 1:6)
+   BOQ extras on the base cost: water charges 1.5 %, tools and plant 1.5 %, sundries 3 %, contractor's profit 10 %, then contingency 5 %. */
+const BRICKS={
+  pk:{name:'Pakistan standard · 9 × 4½ × 3 in',L:228.6,W:114.3,H:76.2,t:{half:114.3,one:228.6,onehalf:342.9,two:457.2},tl:{half:'4½″ (half brick)',one:'9″ (one brick)',onehalf:'13½″ (1½ brick)',two:'18″ (2 brick)'}},
+  inmod:{name:'Indian modular · 190 × 90 × 90 mm',L:190,W:90,H:90,t:{half:100,one:200,onehalf:300,two:400},tl:{half:'100 mm (half brick)',one:'200 mm (one brick)',onehalf:'300 mm (1½ brick)',two:'400 mm (2 brick)'}},
+  inconv:{name:'Indian conventional · 230 × 110 × 70 mm',L:230,W:110,H:70,t:{half:115,one:230,onehalf:345,two:460},tl:{half:'115 mm (half brick)',one:'230 mm (one brick)',onehalf:'345 mm (1½ brick)',two:'460 mm (2 brick)'}},
+  uk:{name:'UK standard · 215 × 102.5 × 65 mm',L:215,W:102.5,H:65,t:{half:102.5,one:215,onehalf:327.5,two:440},tl:{half:'102.5 mm (half brick)',one:'215 mm (one brick)',onehalf:'327.5 mm (1½ brick)',two:'440 mm (2 brick)'}},
+  us:{name:'US modular · 7⅝ × 3⅝ × 2¼ in',L:193.7,W:92.1,H:57.2,t:{half:92.1,one:193.7,onehalf:295.3,two:397},tl:{half:'3⅝″ (half brick)',one:'7⅝″ (one brick)',onehalf:'11⅝″ (1½ brick)',two:'15⅝″ (2 brick)'}},
+  custom:{name:'Custom size (enter below)'}
+};
+const MIXES=['1:3','1:4','1:5','1:6','1:8'];
+const newWall=n=>({name:'Wall '+n,L:'',H:'',t:'one',tc:'',mix:'1:6',n:'1',open:[]});
+const BR_DEF={units:'imp',brick:'pk',method:'nominal',dm30:'30',cL:'228.6',cW:'114.3',cH:'76.2',joint:'10',bw:'5',mw:'5',dry:'1.33',wc:'0.55',
+  walls:[newWall(1)],
+  rates:{brick:'19000',cement:'1350',sandCft:'65',sandM3:'2295',mason:'1650',helper:'1100',scaff:'0'},
+  norms:{mason:'1.05',helper:'2.2'},
+  pct:{water:'1.5',tools:'1.5',sundry:'3',profit:'10',cont:'5'}};
+let BR=Object.assign(JSON.parse(JSON.stringify(BR_DEF)),store.get('brick',{}));
+const saveBR=()=>store.set('brick',BR);
+const brNum=(s,label,allowBlank)=>{s=String(s??'').trim();if(s===''){if(allowBlank)return 0;throw Error(label+' is empty')}const v=rl(run(s,false).r,label);if(!isFinite(v))throw Error(label+' is not a number');return v};
+const brLen=(s,label)=>{s=String(s??'').trim();if(s==='')throw Error(label+' is empty');
+  if(BR.units==='imp'){const r=ftEval(s);if(r.d!==1)throw Error(label+': type feet and inches like 12 6');return r.v*0.0254}
+  return brNum(s,label)};
+const brick=()=>{const b=BRICKS[BR.brick];if(BR.brick!=='custom')return b;
+  const L=brNum(BR.cL,'Brick length'),W=brNum(BR.cW,'Brick width'),H=brNum(BR.cH,'Brick height'),j=+BR.joint;
+  return{L,W,H,t:{half:W,one:L,onehalf:L+W+j,two:2*L+j},tl:{half:`${fmt(W)} mm (half brick)`,one:`${fmt(L)} mm (one brick)`,onehalf:`${fmt(L+W+j)} mm (1½ brick)`,two:`${fmt(2*L+j)} mm (2 brick)`}}};
+const wallT=w=>{if(w.t==='custom'){const s=String(w.tc||'').trim();if(!s)throw Error(w.name+': enter the thickness');
+    if(BR.units==='imp'){const r=ftEval(/[′'"″]|in/.test(s)?s:s+' in');return r.v*0.0254}return brNum(s,'Thickness')/1000}
+  return brick().t[w.t]/1000};
+const LEN_HINT=()=>BR.units==='imp'?'ft in':'m';
+function brCalc(){
+  const b=brick(),j=+BR.joint/1000,bl=b.L/1000,bw=b.W/1000,bh=b.H/1000;
+  const vb=bl*bw*bh,vbm=(bl+j)*(bw+j)*(bh+j);
+  const dry=brNum(BR.dry,'Dry volume factor'),mw=brNum(BR.mw,'Mortar wastage')/100,bwst=brNum(BR.bw,'Brick wastage')/100,wc=brNum(BR.wc,'Water–cement ratio');
+  const nominal=BR.method==='nominal',dm30=brNum(BR.dm30,'Dry mortar per 100 cft')/100;
+  const walls=[],byMix={};let V=0,A=0,bricks=0,cementM3=0,sandM3=0;
+  BR.walls.forEach((w,i)=>{
+    const r={i,ok:false};walls.push(r);
+    try{
+      const L=brLen(w.L,w.name+' length'),H=brLen(w.H,w.name+' height'),t=wallT(w),n=Math.max(0,brNum(w.n,w.name+' count'));
+      let oa=0;w.open.forEach((o,k)=>{const ow=brLen(o.w,`${w.name} opening ${k+1} width`),oh=brLen(o.h,`${w.name} opening ${k+1} height`),on=brNum(o.n,'Opening count');oa+=ow*oh*on});
+      const area=Math.max(0,L*H-oa),net=area*t*n,[c,sd]=w.mix.split(':').map(Number);
+      const nb=nominal?net/vb*0.9:net/vbm,dm=nominal?net*dm30:(net-nb*vb)*dry*(1+mw);
+      Object.assign(r,{ok:true,L,H,t,n,gross:L*H*t*n,ded:oa*t*n,net,area:area*n,bricks:nb});
+      V+=net;A+=area*n;bricks+=nb;cementM3+=dm*c/(c+sd);sandM3+=dm*sd/(c+sd);
+      byMix[w.mix]=(byMix[w.mix]||0)+net;
+    }catch(e){r.err=e.message}
+  });
+  const cementKg=cementM3*1440,bags=cementKg/50;
+  return{walls,V,A,bricks,bricksW:Math.ceil(bricks*(1+bwst)-1e-9),bags,cementKg,sandM3,waterL:wc*cementKg,byMix,perM3:nominal?0.9/vb:1/vbm,
+    masonDays:V*brNum(BR.norms.mason,'Mason days'),helperDays:V*brNum(BR.norms.helper,'Helper days')};
+}
+const money=x=>'Rs '+Math.round(x).toLocaleString('en-US');
+const q2=x=>fmtD(Math.round(x*100)/100);
+const volTxt=v=>BR.units==='imp'?`${q2(v*FT3_PER_M3)} cft`:`${q2(v)} m³`;
+const volAlt=v=>BR.units==='imp'?`${q2(v)} m³`:`${q2(v*FT3_PER_M3)} cft`;
+function brBOQ(R){
+  const r=k=>brNum(BR.rates[k],'Rate',true),p=k=>brNum(BR.pct[k],'Percentage',true)/100,imp=BR.units==='imp';
+  const sandQ=imp?R.sandM3*FT3_PER_M3:R.sandM3,sandRate=imp?r('sandCft'):r('sandM3');
+  const items=[
+    {d:'Bricks (with '+BR.bw+'% wastage)',q:R.bricksW,u:'nos',rk:'brick',ru:'per 1000',amt:R.bricksW/1000*r('brick'),qf:x=>Math.round(x).toLocaleString('en-US')},
+    {d:'Cement, 50 kg bags',q:Math.ceil(R.bags-1e-9),u:'bags',rk:'cement',ru:'per bag',amt:Math.ceil(R.bags-1e-9)*r('cement'),qf:x=>fmt(x)},
+    {d:'Sand',q:sandQ,u:imp?'cft':'m³',rk:imp?'sandCft':'sandM3',ru:imp?'per cft':'per m³',amt:sandQ*sandRate,qf:x=>q2(x)},
+    {d:'Mason (raj mistri)',q:R.masonDays,u:'days',rk:'mason',ru:'per day',amt:R.masonDays*r('mason'),qf:x=>q2(x)},
+    {d:'Helper (mazdoor)',q:R.helperDays,u:'days',rk:'helper',ru:'per day',amt:R.helperDays*r('helper'),qf:x=>q2(x)},
+    {d:'Scaffolding',q:1,u:'job',rk:'scaff',ru:'lump sum',amt:r('scaff'),qf:()=>'1'}];
+  const base=items.reduce((s,i)=>s+i.amt,0);
+  const extras=[['water','Water charges'],['tools','Tools and plant'],['sundry','Sundries'],['profit',"Contractor's profit and overheads"]].map(([k,l])=>({k,l,amt:base*p(k)}));
+  const sub=base+extras.reduce((s,e)=>s+e.amt,0),cont=sub*p('cont'),total=sub+cont;
+  return{items,base,extras,sub,cont,total};
+}
+const optHTML=(list,cur)=>list.map(([v,l])=>`<option value="${esc(v)}" ${String(v)===String(cur)?'selected':''}>${esc(l)}</option>`).join('');
+function brWallsHTML(){
+  let b;try{b=brick()}catch(e){b=BRICKS.pk}
+  const tOpts=[['half',b.tl.half],['one',b.tl.one],['onehalf',b.tl.onehalf],['two',b.tl.two],['custom','Other thickness']];
+  return BR.walls.map((w,i)=>`<div class="wcard" data-wall="${i}">
+    <div class="whead"><input class="ti wname" data-w="${i}" data-f="name" value="${esc(w.name)}" aria-label="Wall name">
+      <label class="wx">Same walls ×<input class="ti" type="text" inputmode="decimal" data-w="${i}" data-f="n" value="${esc(w.n)}"></label></div>
+    <div class="sgrid">
+      <label>Length <span class="uh">${LEN_HINT()}</span><input class="ti" type="text" inputmode="${BR.units==='imp'?'text':'decimal'}" data-w="${i}" data-f="L" value="${esc(w.L)}" placeholder="${BR.units==='imp'?'20 6':'6.25'}"></label>
+      <label>Height <span class="uh">${LEN_HINT()}</span><input class="ti" type="text" inputmode="${BR.units==='imp'?'text':'decimal'}" data-w="${i}" data-f="H" value="${esc(w.H)}" placeholder="${BR.units==='imp'?'10':'3.05'}"></label>
+      <label>Thickness<select data-w="${i}" data-f="t">${optHTML(tOpts,w.t)}</select></label>
+      ${w.t==='custom'?`<label>Thickness <span class="uh">${BR.units==='imp'?'inches':'mm'}</span><input class="ti" type="text" inputmode="decimal" data-w="${i}" data-f="tc" value="${esc(w.tc)}"></label>`:''}
+      <label>Mortar (cement : sand)<select data-w="${i}" data-f="mix">${optHTML(MIXES.map(m=>[m,m]),w.mix)}</select></label>
+    </div>
+    <div class="ohead"><b>Openings and deductions</b><span class="hint">doors, windows, lintels, columns</span></div>
+    ${w.open.length?`<div class="otbl"><span class="hint">Name</span><span class="hint">Width</span><span class="hint">Height</span><span class="hint">How many</span><span></span>
+    ${w.open.map((o,k)=>`<input class="ti" data-w="${i}" data-o="${k}" data-f="name" value="${esc(o.name)}" aria-label="Opening name"><input class="ti" type="text" inputmode="${BR.units==='imp'?'text':'decimal'}" data-w="${i}" data-o="${k}" data-f="w" value="${esc(o.w)}" aria-label="Opening width"><input class="ti" type="text" inputmode="${BR.units==='imp'?'text':'decimal'}" data-w="${i}" data-o="${k}" data-f="h" value="${esc(o.h)}" aria-label="Opening height"><input class="ti" type="text" inputmode="decimal" data-w="${i}" data-o="${k}" data-f="n" value="${esc(o.n)}" aria-label="Number of these openings"><button class="xbtn" data-delopen="${i}-${k}" aria-label="Remove opening">×</button>`).join('')}</div>`:''}
+    <div class="row" style="gap:6px"><button class="op" data-addopen="${i}">+ Opening</button><button class="op" data-dup="${i}">Copy wall</button><button class="op" data-delwall="${i}">Remove wall</button></div>
+    <div class="wout" id="wout-${i}"></div>
+  </div>`).join('');
+}
+function brSetupHTML(){
+  const jOpts=BR.units==='imp'?[['6','¼″ (6 mm)'],['10','⅜″ (10 mm)'],['12','½″ (12 mm)']]:[['6','6 mm'],['8','8 mm'],['10','10 mm'],['12','12 mm']];
+  return `${segHTML('brU',[['imp','Feet-inches'],['met','Metric']],BR.units)}
+  <div class="sgrid">
+    <label class="full">Brick type<select data-s="brick">${optHTML(Object.entries(BRICKS).map(([k,b])=>[k,b.name]),BR.brick)}</select></label>
+    <label class="full">Counting method<select data-s="method">${optHTML([['nominal','Pakistan rule (size includes joint)'],['exact','Exact (brick + mortar joint)']],BR.method)}</select></label>
+    ${BR.method==='exact'?`<label>Mortar joint<select data-s="joint">${optHTML(jOpts,BR.joint)}</select></label>`:''}
+    ${BR.brick==='custom'?`<label>Brick length <span class="uh">mm</span><input class="ti" type="text" inputmode="decimal" data-s="cL" value="${esc(BR.cL)}"></label><label>Brick width <span class="uh">mm</span><input class="ti" type="text" inputmode="decimal" data-s="cW" value="${esc(BR.cW)}"></label><label>Brick height <span class="uh">mm</span><input class="ti" type="text" inputmode="decimal" data-s="cH" value="${esc(BR.cH)}"></label>`:''}
+  </div>
+  <details class="assume"><summary>Assumptions you can change</summary><div class="sgrid">
+    <label>Brick wastage <span class="uh">%</span><input class="ti" type="text" inputmode="decimal" data-s="bw" value="${esc(BR.bw)}"></label>
+    ${BR.method==='nominal'?`<label>Dry mortar per 100 cft <span class="uh">cft</span><input class="ti" type="text" inputmode="decimal" data-s="dm30" value="${esc(BR.dm30)}"></label>`:`<label>Mortar wastage <span class="uh">%</span><input class="ti" type="text" inputmode="decimal" data-s="mw" value="${esc(BR.mw)}"></label>
+    <label>Dry volume factor<input class="ti" type="text" inputmode="decimal" data-s="dry" value="${esc(BR.dry)}"></label>`}
+    <label>Water–cement ratio<input class="ti" type="text" inputmode="decimal" data-s="wc" value="${esc(BR.wc)}"></label>
+    <label>Mason-days per m³<input class="ti" type="text" inputmode="decimal" data-n="mason" value="${esc(BR.norms.mason)}"></label>
+    <label>Helper-days per m³<input class="ti" type="text" inputmode="decimal" data-n="helper" value="${esc(BR.norms.helper)}"></label>
+  </div><p class="hint">${BR.method==='nominal'?'Pakistan rule: the brick size is taken to include its joint, 10% of the wall is mortar, and dry mortar is 30 cft per 100 cft. With 5% wastage this gives the usual 1350 bricks per 100 cft.':'Exact: the joint is added to each side of the brick. Dry volume factor 1.33 allows for bulking of sand and voids.'} One 50 kg cement bag = 0.0347 m³ (1440 kg/m³). Labour norms come from a standard rate analysis for brickwork in 1:6 mortar.</p></details>
+  <p class="hint" id="brPer"></p>`;
+}
+function paintBrick(){
+  $('#brSetup').innerHTML=brSetupHTML();$('#brWalls').innerHTML=brWallsHTML();brRecalc();
+}
+function brRecalc(){
+  let R;try{R=brCalc()}catch(e){$('#brSum').innerHTML=`<p class="hint" style="color:var(--bad)">${esc(e.message)}</p>`;$('#brBoq').innerHTML='';return}
+  $('#brPer').textContent=`With this brick and joint: ${q2(R.perM3)} bricks per m³ (${q2(R.perM3/FT3_PER_M3)} per cft), before wastage.`;
+  R.walls.forEach(w=>{const el=$('#wout-'+w.i);if(!el)return;
+    if(!w.ok){el.innerHTML=`<span class="hint">${esc(BR.walls[w.i].L||BR.walls[w.i].H?w.err:'Enter length and height')}</span>`;return}
+    el.innerHTML=`<span>Net ${volTxt(w.net)}${w.n!==1?` <span class="hint">(${fmt(w.n)} walls)</span>`:''}</span><span>${Math.round(w.bricks).toLocaleString('en-US')} bricks</span>`+(w.ded?`<span class="hint">gross ${volTxt(w.gross)} − openings ${volTxt(w.ded)}</span>`:'')});
+  const okWalls=R.walls.filter(w=>w.ok).length;
+  if(!okWalls){$('#brSum').innerHTML='<p class="hint">Enter the length and height of a wall to see the quantities.</p>';$('#brBoq').innerHTML='';return}
+  const imp=BR.units==='imp';
+  $('#brSum').innerHTML=`<div class="kv">
+    ${kv('Net brickwork',`${volTxt(R.V)}<br><small class="hint">${volAlt(R.V)}</small>`,null)}
+    ${kv('Wall area (one face)',imp?`${q2(R.A*FT2_PER_M2)} ft²`:`${q2(R.A)} m²`,null)}
+    ${kv('Bricks',`${R.bricksW.toLocaleString('en-US')}<br><small class="hint">${Math.round(R.bricks).toLocaleString('en-US')} + ${BR.bw}% wastage</small>`,null)}
+    ${kv('Cement',`${q2(R.bags)} bags<br><small class="hint">${q2(R.cementKg)} kg</small>`,null)}
+    ${kv('Sand',`${imp?q2(R.sandM3*FT3_PER_M3)+' cft':q2(R.sandM3)+' m³'}<br><small class="hint">${imp?q2(R.sandM3)+' m³':q2(R.sandM3*FT3_PER_M3)+' cft'}</small>`,null)}
+    ${kv('Water for mortar',`${q2(R.waterL)} litres`,null)}
+    ${kv('Mason',`${q2(R.masonDays)} days`,null)}
+    ${kv('Helper',`${q2(R.helperDays)} days`,null)}
+  </div>${Object.keys(R.byMix).length>1?`<p class="hint">Mortar mixes: ${Object.entries(R.byMix).map(([m,v])=>`${m} for ${volTxt(v)}`).join(', ')}</p>`:''}`;
+  let B;try{B=brBOQ(R)}catch(e){$('#brBoq').innerHTML=`<p class="hint" style="color:var(--bad)">${esc(e.message)}</p>`;return}
+  const vRate=imp?B.total/(R.V*FT3_PER_M3)*100:B.total/R.V;
+  $('#brBoq').innerHTML=`<div class="tscroll" style="max-height:none"><table class="boq"><thead><tr><th>#</th><th>Item</th><th>Qty</th><th>Rate (Rs)</th><th>Amount</th></tr></thead><tbody>
+    ${B.items.map((it,k)=>`<tr><td>${k+1}</td><td>${esc(it.d)}</td><td>${it.qf(it.q)} <small>${it.u}</small></td><td><input class="ti rate" type="text" inputmode="decimal" data-r="${it.rk}" value="${esc(BR.rates[it.rk])}" aria-label="Rate ${esc(it.ru)}"><small>${it.ru}</small></td><td>${money(it.amt)}</td></tr>`).join('')}
+    <tr class="st"><td></td><td colspan="3">Cost of materials and labour</td><td>${money(B.base)}</td></tr>
+    ${B.extras.map(e=>`<tr><td></td><td colspan="2">${esc(e.l)}</td><td><input class="ti rate" type="text" inputmode="decimal" data-p="${e.k}" value="${esc(BR.pct[e.k])}" aria-label="${esc(e.l)} percent"><small>%</small></td><td>${money(e.amt)}</td></tr>`).join('')}
+    <tr><td></td><td colspan="2">Contingency</td><td><input class="ti rate" type="text" inputmode="decimal" data-p="cont" value="${esc(BR.pct.cont)}" aria-label="Contingency percent"><small>%</small></td><td>${money(B.cont)}</td></tr>
+    <tr class="gt"><td></td><td colspan="3">Total estimate</td><td>${money(B.total)}</td></tr>
+  </tbody></table></div>
+  <p class="hint">Rate of brickwork: ${money(vRate)} ${imp?'per 100 cft':'per m³'}. Water, tools, sundries and profit are worked out on the cost of materials and labour; contingency on the total of those.</p>`;
+  brLast={R,B};
+}
+let brLast=null,brClearArmed=false;
+function brBoqText(){if(!brLast)return '';const{R,B}=brLast,imp=BR.units==='imp';
+  const L=['BRICKWORK ESTIMATE (Hisab Calculator)','Brick: '+(BRICKS[BR.brick]||{}).name+', joint '+BR.joint+' mm','',
+    'WALLS',...BR.walls.map((w,i)=>{const r=R.walls[i];return r.ok?`${w.name} ×${w.n}: ${w.L} × ${w.H}, ${w.t==='custom'?w.tc:brick().tl[w.t]}, ${w.mix}${w.open.length?`, openings: ${w.open.map(o=>`${o.name||'opening'} ${o.w}×${o.h} ×${o.n}`).join('; ')}`:''} → ${volTxt(r.net)}`:`${w.name}: ${r.err}`}),
+    '','QUANTITIES',`Net brickwork: ${volTxt(R.V)} (${volAlt(R.V)})`,`Bricks: ${R.bricksW.toLocaleString('en-US')}`,`Cement: ${q2(R.bags)} bags`,`Sand: ${imp?q2(R.sandM3*FT3_PER_M3)+' cft':q2(R.sandM3)+' m³'}`,`Water: ${q2(R.waterL)} litres`,'',
+    'BILL OF QUANTITIES',...B.items.map((it,k)=>`${k+1}. ${it.d}: ${it.qf(it.q)} ${it.u} @ Rs ${BR.rates[it.rk]} ${it.ru} = ${money(it.amt)}`),
+    `Cost of materials and labour: ${money(B.base)}`,...B.extras.map(e=>`${e.l} ${BR.pct[e.k]}%: ${money(e.amt)}`),`Contingency ${BR.pct.cont}%: ${money(B.cont)}`,`TOTAL: ${money(B.total)}`];
+  return L.join('\n')}
+(function(){
+  const sec=$('#brick');
+  sec.addEventListener('input',e=>{const t=e.target,d=t.dataset;
+    if(d.w!=null&&d.f){const w=BR.walls[+d.w];if(d.o!=null)w.open[+d.o][d.f]=t.value;else w[d.f]=t.value;
+      if(t.tagName==='SELECT'){if(d.f==='t'&&d.o==null){if(t.value==='half'&&w.mix==='1:6')w.mix='1:4';else if(t.value!=='half'&&w.mix==='1:4')w.mix='1:6'}saveBR();$('#brWalls').innerHTML=brWallsHTML()}}
+    else if(d.s){BR[d.s]=t.value;if(d.s==='brick')BR.method=t.value==='pk'?'nominal':'exact';if(t.tagName==='SELECT'){saveBR();paintBrick();return}}
+    else if(d.n){BR.norms[d.n]=t.value}else if(d.r){BR.rates[d.r]=t.value}else if(d.p){BR.pct[d.p]=t.value}
+    else return;
+    saveBR();brRecalc()});
+  sec.addEventListener('click',e=>{const t=e.target;let x;
+    if((x=t.closest('[data-set="brU"]'))){BR.units=x.dataset.v;BR.joint='10';saveBR();paintBrick();return}
+    if((x=t.closest('[data-addwall]'))){BR.walls.push(newWall(BR.walls.length+1));saveBR();paintBrick();const ins=sec.querySelector(`[data-w="${BR.walls.length-1}"][data-f="L"]`);if(ins)ins.focus();return}
+    if((x=t.closest('[data-dup]'))){const w=JSON.parse(JSON.stringify(BR.walls[+x.dataset.dup]));w.name+=' (copy)';BR.walls.splice(+x.dataset.dup+1,0,w);saveBR();paintBrick();return}
+    if((x=t.closest('[data-delwall]'))){BR.walls.splice(+x.dataset.delwall,1);if(!BR.walls.length)BR.walls.push(newWall(1));saveBR();paintBrick();return}
+    if((x=t.closest('[data-addopen]'))){const w=BR.walls[+x.dataset.addopen];w.open.push({name:w.open.length?'Window':'Door',w:'',h:'',n:'1'});saveBR();$('#brWalls').innerHTML=brWallsHTML();brRecalc();return}
+    if((x=t.closest('[data-delopen]'))){const[a,k]=x.dataset.delopen.split('-').map(Number);BR.walls[a].open.splice(k,1);saveBR();$('#brWalls').innerHTML=brWallsHTML();brRecalc();return}
+    if(t.closest('#brCopy')){const s=brBoqText();if(!s){toast('Enter a wall first');return}
+      if(navigator.clipboard)navigator.clipboard.writeText(s).then(()=>toast('BOQ copied. Paste it into WhatsApp, notes or Excel.'),()=>toast('Copying is blocked here'));else toast('Copying is blocked here');return}
+    if(t.closest('#brNew')){const btn=$('#brNew');if(!brClearArmed){brClearArmed=true;btn.textContent='Tap again to clear all walls';setTimeout(()=>{brClearArmed=false;btn.textContent='Start a new estimate'},3000);return}
+      brClearArmed=false;btn.textContent='Start a new estimate';BR.walls=[newWall(1)];saveBR();paintBrick();toast('New estimate started. Rates and settings are kept.');return}
+  });
+})();
+paintBrick();
+
 /* ---------- boot ---------- */
 
 paint();units();ftPaint();showTab();
