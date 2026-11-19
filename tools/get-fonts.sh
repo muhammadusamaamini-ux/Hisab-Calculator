@@ -5,7 +5,7 @@ set -euo pipefail
 out="web/fonts"
 mkdir -p "$out"
 tmp="$(mktemp -d)"
-( cd "$tmp" && npm pack @fontsource/barlow@5 @fontsource/barlow-condensed@5 @fontsource/jetbrains-mono@5 >/dev/null )
+( cd "$tmp" && npm pack @fontsource/roboto-condensed@5 @fontsource/dotgothic16@5 @fontsource/jetbrains-mono@5 >/dev/null )
 for f in "$tmp"/*.tgz; do d="$tmp/$(basename "$f" .tgz)"; mkdir -p "$d"; tar -xzf "$f" -C "$d"; done
 css="$out/fonts.css"
 : > "$css"
@@ -16,7 +16,7 @@ add() {
   cp "$file" "$out/"
   echo "@font-face{font-family:'$family';font-style:normal;font-weight:$weight;font-display:swap;src:url('$(basename "$file")') format('woff2')}" >> "$css"
 }
-for w in 400 500 600 700; do add "Barlow" "barlow" "$w"; done
-for w in 600 700; do add "Barlow Condensed" "barlow-condensed" "$w"; done
+for w in 400 500 600 700; do add "Roboto Condensed" "roboto-condensed" "$w"; done
+add "DotGothic16" "dotgothic16" 400
 for w in 400 500 600; do add "JetBrains Mono" "jetbrains-mono" "$w"; done
 cat "$css"

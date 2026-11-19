@@ -10,4 +10,5 @@ Personal offline engineering calculator for Android (WebView) and Windows (Elect
 - Every version must keep "Check for updates" (MODE → App) and the update notification with what's new.
 - Do not send the user download links for updates; they update from inside the app.
 - New site calculators: follow `docs/ADDING-CALCULATORS.md`.
-- After changing `web/index.html`, also republish the browser artifact from it (swap `fonts/fonts.css` for the Google Fonts link and drop the html/head/body wrapper).
+- After changing `web/index.html`, also republish the browser artifact from it (swap `fonts/fonts.css` for the Google Fonts link — Roboto Condensed, DotGothic16, JetBrains Mono — and drop the html/head/body wrapper).
+- Look: "Classic Casio" (silver body, grey-green LCD in a dark bezel, black function keys, light number keys); icon: blueprint set square.

@@ -23,7 +23,7 @@ function createWindow() {
     minHeight: 560,
     title: 'Hisab Calculator',
     autoHideMenuBar: true,
-    backgroundColor: '#16181b',
+    backgroundColor: '#c9cdd3',
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false },
   });
   Menu.setApplicationMenu(null);

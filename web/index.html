@@ -8,25 +8,30 @@
 <link rel="stylesheet" href="fonts/fonts.css">
 <style>
 /* Layout: one screen-high column; tabs on top, LCD, then a keypad that stretches to fill whatever height the phone has */
+/* Classic Casio: silver body, grey-green LCD in a dark bezel, black function keys, light number keys */
 :root{
-  --bg:#e7eaee; --surface:#ffffff; --ink:#15202a; --muted:#5a6977; --line:#cfd8e0;
-  --key:#f6f8fa; --key-op:#dde5ec; --accent:#d97a1f; --on-accent:#ffffff; --bad:#b4372c; --soft:#f3e3d1;
-  --k-fn:#dde2e8; --k-num:#fbfcfd; --k-ink:#15202a; --shift:#f2b632; --shift-ink:#2b1d00;
-  --del:#e8823f; --del-ink:#200e02; --lcd:#d3e4df; --lcd-ink:#15302a; --lcd-err:#a3261b; --lab-s:#986000; --alpha:#7a63e0; --alpha-ink:#ffffff; --lab-a:#5a3fcf; --shadow:rgba(20,30,40,.22);
-  --f-ui:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
-  --f-head:"Barlow Condensed","Barlow",system-ui,sans-serif;
+  --bg:#c9cdd3; --surface:#f4f5f7; --ink:#16181c; --muted:#4f5761; --line:#aeb4bc;
+  --key:#eceef1; --key-op:#dcdfe4; --accent:#2d4e8a; --on-accent:#ffffff; --bad:#b3261e; --soft:#e3e8f0;
+  --k-fn:#2f3238; --k-ink:#ffffff; --k-num:#f1f2f4; --k-num-ink:#16181c; --shift:#e9b10e; --shift-ink:#1a1300;
+  --del:#2d4e8a; --del-ink:#ffffff; --lcd:#b7c2a5; --lcd-ink:#1d2218; --lcd-err:#8e1b12; --lab-s:#7a4e00; --alpha:#c42a2f; --alpha-ink:#ffffff; --lab-a:#a3141e;
+  --bezel:#3a3d44; --pad:#e9ebee; --pad-ink:#2f3238; --shadow:rgba(0,0,0,.35);
+  --f-ui:"Roboto Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-head:"Roboto Condensed","Arial Narrow",system-ui,sans-serif;
   --f-num:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  --f-lcd:"DotGothic16","JetBrains Mono",ui-monospace,monospace;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#16181b; --surface:#1f2226; --ink:#e8ecef; --muted:#9099a3; --line:#33383f;
-  --key:#272b30; --key-op:#30353b; --accent:#ef9a45; --on-accent:#1a1006; --bad:#f07a6e; --soft:#3a2b1c;
-  --k-fn:#363a40; --k-num:#2a2d32; --k-ink:#eef0f2; --shift:#f5c33b; --shift-ink:#241800;
-  --del:#ec8f52; --del-ink:#200e02; --lcd:#d3e4df; --lcd-ink:#12241f; --lcd-err:#a3261b; --lab-s:#f5c33b; --alpha:#8a76ea; --alpha-ink:#ffffff; --lab-a:#b4a6ff; --shadow:rgba(0,0,0,.5); color-scheme:dark}}
+  --bg:#25282d; --surface:#2f3339; --ink:#eceef1; --muted:#a3aab3; --line:#454a52;
+  --key:#353a41; --key-op:#3e434b; --accent:#7ea2e0; --on-accent:#0b1730; --bad:#f2867c; --soft:#2c3646;
+  --k-fn:#17191d; --k-ink:#ffffff; --k-num:#4a4f57; --k-num-ink:#ffffff; --shift:#e9b10e; --shift-ink:#1a1300;
+  --del:#3d63a8; --del-ink:#ffffff; --lcd:#a9b597; --lcd-ink:#1a1f15; --lcd-err:#7c150d; --lab-s:#f2c14a; --alpha:#d9443f; --alpha-ink:#ffffff; --lab-a:#ff8a8f;
+  --bezel:#16181b; --pad:#3a3e46; --pad-ink:#f1f2f4; --shadow:rgba(0,0,0,.55); color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#16181b; --surface:#1f2226; --ink:#e8ecef; --muted:#9099a3; --line:#33383f;
-  --key:#272b30; --key-op:#30353b; --accent:#ef9a45; --on-accent:#1a1006; --bad:#f07a6e; --soft:#3a2b1c;
-  --k-fn:#363a40; --k-num:#2a2d32; --k-ink:#eef0f2; --shift:#f5c33b; --shift-ink:#241800;
-  --del:#ec8f52; --del-ink:#200e02; --lcd:#d3e4df; --lcd-ink:#12241f; --lcd-err:#a3261b; --lab-s:#f5c33b; --alpha:#8a76ea; --alpha-ink:#ffffff; --lab-a:#b4a6ff; --shadow:rgba(0,0,0,.5); color-scheme:dark}
+  --bg:#25282d; --surface:#2f3339; --ink:#eceef1; --muted:#a3aab3; --line:#454a52;
+  --key:#353a41; --key-op:#3e434b; --accent:#7ea2e0; --on-accent:#0b1730; --bad:#f2867c; --soft:#2c3646;
+  --k-fn:#17191d; --k-ink:#ffffff; --k-num:#4a4f57; --k-num-ink:#ffffff; --shift:#e9b10e; --shift-ink:#1a1300;
+  --del:#3d63a8; --del-ink:#ffffff; --lcd:#a9b597; --lcd-ink:#1a1f15; --lcd-err:#7c150d; --lab-s:#f2c14a; --alpha:#d9443f; --alpha-ink:#ffffff; --lab-a:#ff8a8f;
+  --bezel:#16181b; --pad:#3a3e46; --pad-ink:#f1f2f4; --shadow:rgba(0,0,0,.55); color-scheme:dark}
 
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -272,6 +277,28 @@ input[type=number]{font-family:var(--f-num)}
 #feet .ftgrid{grid-template-rows:repeat(5,minmax(0,1fr));max-height:460px}
 #ftKeys .key.eq{grid-column:5;grid-row:4/6}
 #ftKeys .key.space{grid-column:1/5;grid-row:5;background:var(--k-fn);font-size:1.05rem;letter-spacing:.08em}
+
+/* ---- Classic Casio look ---- */
+.ngrid .key{color:var(--k-num-ink);font-weight:600}
+.ngrid .key.del{color:var(--del-ink)}
+.fgrid .key{font-weight:600}
+.key.shift{color:var(--shift-ink)}
+.key.alpha{color:var(--alpha-ink)}
+.pad{background:var(--pad);color:var(--pad-ink);border:5px solid var(--k-fn);border-radius:50%;box-shadow:0 2px 0 var(--shadow)}
+.pad button{color:var(--pad-ink)}
+.pad .dot{background:var(--pad-ink)}
+#calc .lcd,#feet .ftlcd{border:9px solid var(--bezel);border-radius:18px;box-shadow:inset 0 3px 8px rgba(0,0,0,.35)}
+.mexpr,#calc .res,.ftexpr,#feet .res,.ftprev,.lcd .status,.lcd .note,#ftOut{font-family:var(--f-lcd)}
+.mexpr .tk,.mexpr{font-weight:400}
+#calc .res,#feet .res{font-weight:400}
+.ftgrid .key{color:var(--k-num-ink);font-weight:600}
+.ftgrid .key.fn,.ftgrid .key.op,.ftgrid .key.space{color:var(--k-ink)}
+.ftgrid .key.del{color:var(--del-ink)}
+.ftgrid .key.eq{background:var(--k-num);color:var(--k-num-ink);border:2px solid var(--k-fn)}
+.fracs button{color:var(--k-ink)}
+.fracs button.tog{color:var(--k-num-ink);background:var(--k-num)}
+.backbtn{background:var(--surface)}
+.op.primary{color:var(--on-accent)}
 </style>
 </head>
 <body>
