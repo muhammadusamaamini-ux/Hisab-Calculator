@@ -40,3 +40,12 @@ Every number row gets a **Use** button that sends it to the scientific calculato
 - Put the method's assumptions (brick size, mortar joint, dry-volume factor, mix ratio) as inputs with defaults,
   so the person can change them, and say them in `about`.
 - Throw `Error('…')` with a plain sentence for impossible input; it is shown in place of the results.
+
+## Estimators with a bill of quantities
+
+Brickwork, RCC wall and RCC slab are full screens, not `SITE_CALCS` entries. Their bill exports through
+`boqDoc(kind)` in `web/index.html`, which builds one model (info, measurement sheet, material quantities,
+steel schedule, priced BOQ, amount in words, notes) that `toXLSX`, `toPDF` and `toCSV` all write.
+A new estimator screen adds a `kind` to `boqDoc`, a `data-exp` export box in its BOQ panel, and its section id
+to the `{brick:'brick',rcw:'wall',rcs:'slab'}` map. The apps save files through `HisabAndroid.saveFile/shareFile`
+and `hisabPC.saveFile`.

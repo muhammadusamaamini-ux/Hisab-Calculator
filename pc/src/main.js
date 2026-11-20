@@ -40,6 +40,17 @@ app.on('window-all-closed', () => app.quit());
 
 ipcMain.handle('app:version', () => app.getVersion());
 
+// Save an exported bill of quantities (Excel, PDF or CSV), then open it.
+ipcMain.handle('file:save', async (e, { name, b64 }) => {
+  const ext = path.extname(String(name)).slice(1).toLowerCase();
+  const filters = { pdf: [{ name: 'PDF', extensions: ['pdf'] }], xlsx: [{ name: 'Excel workbook', extensions: ['xlsx'] }], csv: [{ name: 'CSV (Excel)', extensions: ['csv'] }] }[ext] || [];
+  const r = await dialog.showSaveDialog(win, { title: 'Save bill of quantities', defaultPath: path.join(app.getPath('documents'), path.basename(String(name))), filters });
+  if (r.canceled || !r.filePath) return '';
+  fs.writeFileSync(r.filePath, Buffer.from(String(b64), 'base64'));
+  shell.openPath(r.filePath);
+  return r.filePath;
+});
+
 // ---------- updates (from the newest GitHub release) ----------
 let updater = null;
 let manual = false;

@@ -49,6 +49,11 @@ section{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;gap:8px}
 .ti:disabled{opacity:.35}
 table.boq{font-size:.8rem}
 .boq th,.boq td{padding:6px 3px}
+.expbox{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line);margin-top:4px;padding-top:12px}
+.expbox h3{margin:0;font:600 1rem var(--f-head,inherit)}
+.expbox label{display:flex;flex-direction:column;gap:4px;font-size:.85rem}
+.exprow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.exprow .op{padding:11px 6px;font-size:.95rem}
 .boq .rate{width:4.3rem}
 .boq td:nth-child(2){min-width:0;overflow-wrap:anywhere}
 .ptbl{grid-template-columns:minmax(0,1.25fr) minmax(0,.6fr) minmax(0,1fr) minmax(0,1fr) 1.6rem}
@@ -387,7 +392,10 @@ input[type=number]{font-family:var(--f-num)}
     <div class="panel"><h2>Bill of quantities</h2>
       <p class="hint">Starting rates are 2026 Lahore market rates: A-class bricks Rs 17,000–20,000 per 1000 (Oct 2026), cement Rs 1,350 a bag and river sand Rs 65 a cft (Jul 2026), mason Rs 1,500–1,800 a day. The helper rate is an estimate. Change any rate to your city's.</p>
       <div id="brBoq"></div>
-      <div class="row" style="gap:6px"><button id="brCopy" class="op primary">Copy BOQ</button><button id="brNew" class="op">Start a new estimate</button></div>
+      <div class="expbox"><h3>Export the bill</h3><label>Project / site name <span class="uh">printed on the bill, optional</span><input class="ti" type="text" data-proj placeholder="e.g. Ground floor, Plot 12"></label>
+      <div class="exprow"><button class="op primary" data-exp="xlsx">Excel</button><button class="op primary" data-exp="pdf">PDF</button><button class="op primary" data-exp="csv">CSV</button></div>
+      <p class="hint">Measurement sheet, material quantities, bill with rates and amounts, amount in words and signature lines. The Excel file keeps its formulas, so you can change a rate there.</p></div>
+      <div class="row" style="gap:6px"><button id="brCopy" class="op">Copy BOQ</button><button id="brNew" class="op">Start a new estimate</button></div>
     </div>
   </section>
 
@@ -404,7 +412,10 @@ input[type=number]{font-family:var(--f-num)}
     <div class="panel"><h2>Bill of quantities</h2>
       <p class="hint">Starting rates (2026): cement Rs 1,350 a bag, sand Rs 65 and crush Rs 150 a cft, Grade 60 steel Rs 265 a kg (market Rs 252–279, Nov 2026), shuttering Rs 47 a ft², concrete labour Rs 75 a cft and steel fixing Rs 18 a kg (worked out from a 2026 Pakistan slab estimate). Binding wire Rs 400 a kg is an estimate. Change any rate to your city's.</p>
       <div id="rcw-boq"></div>
-      <div class="row" style="gap:6px"><button class="op primary" data-copyboq="1">Copy BOQ</button><button class="op" data-new="1">Start a new estimate</button></div>
+      <div class="expbox"><h3>Export the bill</h3><label>Project / site name <span class="uh">printed on the bill, optional</span><input class="ti" type="text" data-proj placeholder="e.g. Ground floor, Plot 12"></label>
+      <div class="exprow"><button class="op primary" data-exp="xlsx">Excel</button><button class="op primary" data-exp="pdf">PDF</button><button class="op primary" data-exp="csv">CSV</button></div>
+      <p class="hint">Measurement sheet, material quantities, steel schedule, bill with rates and amounts, amount in words and signature lines. The Excel file keeps its formulas, so you can change a rate there.</p></div>
+      <div class="row" style="gap:6px"><button class="op" data-copyboq="1">Copy BOQ</button><button class="op" data-new="1">Start a new estimate</button></div>
     </div>
   </section>
 
@@ -420,7 +431,10 @@ input[type=number]{font-family:var(--f-num)}
     <div class="panel"><h2>Bill of quantities</h2>
       <p class="hint">Starting rates (2026): cement Rs 1,350 a bag, sand Rs 65 and crush Rs 150 a cft, Grade 60 steel Rs 265 a kg (market Rs 252–279, Nov 2026), shuttering Rs 47 a ft², concrete labour Rs 75 a cft and steel fixing Rs 18 a kg (worked out from a 2026 Pakistan slab estimate). Binding wire Rs 400 a kg is an estimate. Change any rate to your city's.</p>
       <div id="rcs-boq"></div>
-      <div class="row" style="gap:6px"><button class="op primary" data-copyboq="1">Copy BOQ</button><button class="op" data-new="1">Start a new estimate</button></div>
+      <div class="expbox"><h3>Export the bill</h3><label>Project / site name <span class="uh">printed on the bill, optional</span><input class="ti" type="text" data-proj placeholder="e.g. Ground floor, Plot 12"></label>
+      <div class="exprow"><button class="op primary" data-exp="xlsx">Excel</button><button class="op primary" data-exp="pdf">PDF</button><button class="op primary" data-exp="csv">CSV</button></div>
+      <p class="hint">Measurement sheet, material quantities, steel schedule, bill with rates and amounts, amount in words and signature lines. The Excel file keeps its formulas, so you can change a rate there.</p></div>
+      <div class="row" style="gap:6px"><button class="op" data-copyboq="1">Copy BOQ</button><button class="op" data-new="1">Start a new estimate</button></div>
     </div>
   </section>
 
@@ -1919,6 +1933,7 @@ function brBOQ(R){
     {d:'Mason (raj mistri)',q:R.masonDays,u:'days',rk:'mason',ru:'per day',amt:R.masonDays*r('mason'),qf:x=>q2(x)},
     {d:'Helper (mazdoor)',q:R.helperDays,u:'days',rk:'helper',ru:'per day',amt:R.helperDays*r('helper'),qf:x=>q2(x)},
     {d:'Scaffolding',q:1,u:'job',rk:'scaff',ru:'lump sum',amt:r('scaff'),qf:()=>'1'}];
+  items.forEach(i=>{i.q=['nos','bags','kg','job'].includes(i.u)?Math.round(i.q):Math.round(i.q*100)/100;i.rate=r(i.rk);i.div=i.ru==='per 1000'?1000:1;i.amt=i.q*i.rate/i.div});
   const base=items.reduce((s,i)=>s+i.amt,0);
   const extras=[['water','Water charges'],['tools','Tools and plant'],['sundry','Sundries'],['profit',"Contractor's profit and overheads"]].map(([k,l])=>({k,l,amt:base*p(k)}));
   const sub=base+extras.reduce((s,e)=>s+e.amt,0),cont=sub*p('cont'),total=sub+cont;
@@ -2109,6 +2124,7 @@ function rcBOQ(kind,R){
     {d:'Shuttering (formwork)',q:imp?R.shut*FT2_PER_M2:R.shut,u:imp?'ft²':'m²',rk:imp?'shutFt':'shutM2',ru:imp?'per ft²':'per m²',amt:(imp?R.shut*FT2_PER_M2:R.shut)*r(imp?'shutFt':'shutM2'),qf:q2},
     {d:'Labour: mixing, pouring, curing',q:vq(R.V),u:vu,rk:imp?'labCft':'labM3',ru:'per '+vu,amt:vq(R.V)*r(imp?'labCft':'labM3'),qf:q2},
     {d:'Labour: steel cutting and fixing',q:R.kg,u:'kg',rk:'labSteel',ru:'per kg',amt:R.kg*r('labSteel'),qf:x=>Math.round(x).toLocaleString('en-US')}];
+  items.forEach(i=>{i.q=['nos','bags','kg','job'].includes(i.u)?Math.round(i.q):Math.round(i.q*100)/100;i.rate=r(i.rk);i.div=i.ru==='per 1000'?1000:1;i.amt=i.q*i.rate/i.div});
   const base=items.reduce((s,i)=>s+i.amt,0),extras=[['water','Water charges'],['tools','Tools and plant'],['sundry','Sundries'],['profit',"Contractor's profit and overheads"]].map(([k,l])=>({k,l,amt:base*p(k)}));
   const sub=base+extras.reduce((s,e)=>s+e.amt,0),cont=sub*p('cont');return{items,base,extras,sub,cont,total:sub+cont};
 }
@@ -2234,6 +2250,244 @@ function rcConvert(kind,to){const S=RC[kind],from=S.units;if(from===to)return;
       armed=false;x.textContent='Start a new estimate';S.items=[kind==='wall'?newRcWall(1):newRcSlab(1)];saveRC();rcPaint(kind);toast('New estimate started. Settings and rates are kept.')}});
   rcPaint(kind);
 });
+
+/* ================= BOQ EXPORT: Excel (.xlsx), CSV and PDF =================
+   One bill model (boqDoc) feeds three writers. No libraries, so it works offline:
+   a small zip writer makes the .xlsx (with live formulas), a small PDF writer draws the tables in Helvetica. */
+const xN=(v,d=2)=>({v:Math.round(v*10**d)/10**d,d});
+const xI=v=>({v:Math.round(v),d:0});
+const xQ=v=>Number.isInteger(+v)?xI(v):xN(v,2);
+const fmtN=(v,d)=>Number(v).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+const cTxt=c=>c==null?'':typeof c==='object'?fmtN(c.v,c.d):String(c);
+const ftTxt=m=>ftin(m/0.0254,8).txt.replace('−','-').replace(/^(-?\d+)' (.+)"$/,`$1'-$2"`);
+const inTxt=m=>{const t=Math.round(m/0.0254*8)/8,w=Math.floor(t+1e-9);let n=Math.round((t-w)*8),d=8;if(n){const g=gcd2(n,d);n/=g;d/=g}return(n?(w?w+' ':'')+n+'/'+d:String(w))+'"'};
+function pkWords(n){n=Math.round(Math.abs(n));
+  const a=['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen'],
+    t=['','','twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety'];
+  const two=x=>x<20?a[x]:t[Math.floor(x/10)]+(x%10?'-'+a[x%10]:''),
+    three=x=>x>=100?a[Math.floor(x/100)]+' hundred'+(x%100?' '+two(x%100):''):two(x);
+  const w=x=>{const cr=Math.floor(x/1e7),r=x%1e7,lk=Math.floor(r/1e5),th=Math.floor(r%1e5/1e3),h=r%1e3,p=[];
+    if(cr)p.push(w(cr)+' crore');if(lk)p.push(two(lk)+' lakh');if(th)p.push(two(th)+' thousand');if(h)p.push(three(h));return p.join(' ')};
+  return 'Rupees '+(n?w(n):'zero')+' only'}
+
+function boqDoc(kind){
+  const proj=String(store.get('boqProj','')||'').trim(),now=new Date();
+  const date=now.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+  const iso=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+  const isB=kind==='brick',S=isB?BR:RC[kind],imp=S.units==='imp',u=S.units;let R,B;
+  if(isB){R=brCalc();if(!R.walls.some(w=>w.ok))throw Error('Enter a wall first');B=brBOQ(R)}
+  else{R=rcCalc(kind);if(!R.items.some(w=>w.ok))throw Error('Enter a '+kind+' first');B=rcBOQ(kind,R)}
+  const vol=m=>imp?m*FT3_PER_M3:m,vu=imp?'cft':'m³',vuA=imp?'m³':'cft',volA=m=>imp?m:m*FT3_PER_M3;
+  const ar=m=>imp?m*FT2_PER_M2:m,au=imp?'ft²':'m²',len=m=>imp?ftTxt(m):fmtN(m,3),thk=m=>imp?inTxt(m):fmtN(m*1000,0),su=imp?'"':' mm';
+  const work=isB?'Brickwork':kind==='wall'?'RCC wall':'RCC slab';
+  const info=[['Project',proj||'—'],['Work',work],['Date',date],['Units',imp?'Feet-inches · volumes in cft, areas in ft²':'Metric · volumes in m³, areas in m²']];
+  if(isB){const b=BR.brick==='custom'?`Custom ${BR.cL} × ${BR.cW} × ${BR.cH} mm`:BRICKS[BR.brick].name;
+    info.push(['Brick',b],['Counting method',BR.method==='nominal'?'Pakistan rule (brick size includes joint, mortar 10% of wall, dry mortar 30 cft per 100 cft)':`Exact (brick + ${BR.joint} mm joint, dry factor ${BR.dry})`],
+      ['Mortar (cement : sand)',Object.keys(R.byMix).join(', ')],['Wastage',`Bricks ${BR.bw}%`+(BR.method==='nominal'?'':`, mortar ${BR.mw}%`)])}
+  else info.push(['Concrete mix',S.mix+' (cement : sand : crush)'],['Dry volume factor',S.dry+' × wet volume'],['Steel',`Grade 60 · ${S.stock} ${imp?'ft':'m'} bars · lap ${S.lapD} × bar dia · cover ${S.cover}${su}`],['Wastage',`Concrete ${S.cw}%, steel ${S.sw}%`]);
+  const secs=[];
+  /* 1. Measurement sheet */
+  const mc=[{h:'No.',w:5,a:'c'},{h:'Description',w:isB?31:27,a:'l'},{h:'Nos',w:6,a:'r'},{h:kind==='slab'?(imp?'Length / dia':'Length / dia (m)'):(imp?'Length':'Length (m)'),w:10,a:'r'},
+    {h:kind==='slab'?(imp?'Width / height':'Width / height (m)'):(imp?'Height':'Height (m)'),w:10,a:'r'},{h:imp?'Thick':'Thick (mm)',w:8,a:'r'},{h:'Quantity',w:10,a:'r'},{h:'Unit',w:6,a:'c'}];
+  if(!isB)mc.push({h:'Steel, net (kg)',w:9,a:'r'});
+  const mr=[];
+  if(isB){BR.walls.forEach((w,i)=>{const r=R.walls[i];if(!r.ok)return;
+      mr.push({t:'item',c:[String(i+1),`${w.name}\nMortar ${w.mix}`,xQ(r.n),len(r.L),len(r.H),thk(r.t),xN(vol(r.gross)),vu]});
+      w.open.forEach((o,k)=>{try{const ow=brLen(o.w,''),oh=brLen(o.h,''),on=brNum(o.n,'')*r.n;
+        mr.push({t:'ded',c:['',`Less: ${o.name||'Opening '+(k+1)}`,xQ(on),len(ow),len(oh),thk(r.t),xN(-vol(ow*oh*r.t*on)),vu]})}catch(e){}});
+      if(w.open.length)mr.push({t:'sub',c:['',`Net ${w.name}`,'','','','',xN(vol(r.net)),vu]})});
+    mr.push({t:'total',c:['','Total net brickwork','','','','',xN(vol(R.V)),vu]})}
+  else if(kind==='wall'){let ks=0;S.items.forEach((it,i)=>{const r=R.items[i];if(!r.ok)return;ks+=r.kg;
+      const L=rcLen(it.L,'',u),H=rcLen(it.H,'',u),t=rcSmall(it.t,'',u),n=rcNum(it.n,'');
+      mr.push({t:'item',c:[String(i+1),`${it.name}\nVertical ${it.vb} @ ${it.vs}${su}, horizontal ${it.hb} @ ${it.hs}${su}, ${it.layers==='2'?'2 layers':'1 layer'}${it.starter==='1'?', starter bars':''}`,xQ(n),len(L),len(H),thk(t),xN(vol(L*H*t*n)),vu,xN(r.kg,1)]});
+      it.open.forEach((o,k)=>{try{const ow=rcLen(o.w,'',u),oh=rcLen(o.h,'',u),on=rcNum(o.n,'')*n;
+        mr.push({t:'ded',c:['',`Less: ${o.name||'Opening '+(k+1)}`,xQ(on),len(ow),len(oh),thk(t),xN(-vol(ow*oh*t*on)),vu,'']})}catch(e){}});
+      if(it.open.length)mr.push({t:'sub',c:['',`Net ${it.name}`,'','','','',xN(vol(r.conc)),vu,'']})});
+    mr.push({t:'total',c:['','Total concrete','','','','',xN(vol(R.V)),vu,xN(ks,1)]})}
+  else{let ks=0;S.items.forEach((it,i)=>{const r=R.items[i];if(!r.ok)return;ks+=r.kg;const t=rcSmall(it.t,'',u),n=rcNum(it.n,'');
+      mr.push({t:'grp',c:[String(i+1),`${it.name}\nMain ${it.xb} @ ${it.xs}${su}, cross ${it.yb} @ ${it.ys}${su}, ${it.top==='1'?'top and bottom mesh':'bottom mesh'}`,xQ(n),'','',thk(t),'','',xN(r.kg,1)]});
+      it.parts.forEach(p=>{const sg=p.sg==='−'?-1:1,a=rcLen(p.a,'',u),b=p.k==='circle'?a:rcLen(p.b,'',u),pa=p.k==='rect'?a*b:p.k==='tri'?a*b/2:Math.PI*a*a/4;
+        const nm={rect:'Rectangle',tri:'Triangle (½ × base × height)',circle:'Circle (π/4 × dia²)'}[p.k];
+        mr.push({t:sg<0?'ded':'item',c:['',(sg<0?'Less: ':'')+nm,xQ(n),len(a),p.k==='circle'?'':len(b),thk(t),xN(sg*vol(pa*t*n)),vu,'']})});
+      mr.push({t:'sub',c:['',`Net ${it.name} · area ${fmtN(ar(r.area),2)} ${au}`,'','','','',xN(vol(r.conc)),vu,'']})});
+    mr.push({t:'total',c:['','Total concrete','','','','',xN(vol(R.V)),vu,xN(ks,1)]})}
+  secs.push({title:'1. Measurement sheet',cols:mc,rows:mr});
+  /* 2. Material quantities */
+  const qc=[{h:'No.',w:5,a:'c'},{h:'Material',w:30,a:'l'},{h:'Quantity',w:13,a:'r'},{h:'Unit',w:8,a:'c'},{h:'Equal to',w:15,a:'r'},{h:'Remarks',w:29,a:'l'}];
+  const alt=m=>`${fmtN(volA(m),2)} ${vuA}`;let qr;
+  if(isB)qr=[['Net brickwork',xN(vol(R.V)),vu,alt(R.V),''],['Wall area (one face)',xN(ar(R.A)),au,'',''],
+    ['Bricks, net',xI(R.bricks),'nos','',`${fmtN(imp?R.perM3/FT3_PER_M3:R.perM3,2)} per ${vu}, before wastage`],['Bricks to order',xI(R.bricksW),'nos','',`with ${BR.bw}% wastage`],
+    ['Cement (50 kg bags)',xN(R.bags),'bags',`${fmtN(R.cementKg,0)} kg`,'1 bag = 0.0347 m³'],['Sand',xN(vol(R.sandM3)),vu,alt(R.sandM3),''],
+    ['Water for mortar',xI(R.waterL),'litres','',`water–cement ratio ${BR.wc}`],['Mason (raj mistri)',xN(R.masonDays),'days','',`${BR.norms.mason} days per m³`],['Helper (mazdoor)',xN(R.helperDays),'days','',`${BR.norms.helper} days per m³`]];
+  else qr=[['Concrete, wet (as placed)',xN(vol(R.V)),vu,alt(R.V),''],['Concrete with wastage',xN(vol(R.Vw)),vu,alt(R.Vw),`+${S.cw}%`],['Dry volume of materials',xN(vol(R.dry)),vu,alt(R.dry),`wet × ${S.dry}`],
+    ['Cement (50 kg bags)',xN(R.bags),'bags',`${fmtN(R.cementKg,0)} kg`,`mix ${S.mix}`],['Sand',xN(vol(R.sand)),vu,alt(R.sand),''],['Crush (coarse aggregate)',xN(vol(R.crush)),vu,alt(R.crush),''],
+    ['Water',xI(R.water),'litres','',`water–cement ratio ${S.wc}`],['Steel, Grade 60',xI(R.kg),'kg',`${fmtN(R.tons,3)} tons`,`with laps and ${S.sw}% wastage`],
+    ['Binding wire',xN(R.wire,1),'kg','',`${S.wire} kg per ton of steel`],['Shuttering (formwork)',xN(ar(R.shut)),au,'',kind==='wall'?'both faces, ends and opening sides':'slab soffit']];
+  secs.push({title:'2. Material quantities',cols:qc,rows:qr.map((r,k)=>({t:'item',c:[String(k+1),...r]}))});
+  /* 3. Steel schedule (RCC) */
+  if(!isB){const sc=[{h:'No.',w:5,a:'c'},{h:'Bar',w:19,a:'l'},{h:'Dia (mm)',w:8,a:'r'},{h:imp?'kg per ft':'kg per m',w:9,a:'r'},{h:'Total length',w:12,a:'r'},{h:'Unit',w:6,a:'c'},
+      {h:`No. of ${S.stock} ${imp?'ft':'m'} bars`,w:11,a:'r'},{h:'Weight (kg)',w:11,a:'r'},{h:'Weight (tons)',w:11,a:'r'}];
+    const sr=R.bars.map((b,k)=>({t:'item',c:[String(k+1),BAR_LBL[b.b],xN(BARS[b.b],1),xN(kgPerM(b.b)*(imp?0.3048:1),3),xN(imp?b.len/0.3048:b.len),imp?'ft':'m',xI(b.stockBars),xN(b.kg,1),xN(b.kg/1000,3)]}));
+    sr.push({t:'total',c:['','Total steel','','','','',xI(R.bars.reduce((s,b)=>s+b.stockBars,0)),xN(R.kg,1),xN(R.tons,3)]});
+    secs.push({title:'3. Steel schedule',cols:sc,rows:sr})}
+  /* Bill of quantities */
+  const bc=[{h:'Item',w:6,a:'c'},{h:'Description',w:36,a:'l'},{h:'Quantity',w:12,a:'r'},{h:'Unit',w:7,a:'c'},{h:'Rate (Rs)',w:11,a:'r'},{h:'Per',w:10,a:'c'},{h:'Amount (Rs)',w:15,a:'r'}];
+  const ps=isB?BR.pct:RC.pct,pv=k=>rcNum(ps[k],'',true),n=B.items.length;
+  const br=B.items.map((it,k)=>({t:'item',id:'i'+k,fx:{6:it.div>1?`{C}*{E}/${it.div}`:'{C}*{E}'},
+    c:[String(k+1),it.d,Number.isInteger(it.q)?xI(it.q):xN(it.q),it.u,xN(it.rate,it.rate%1?2:0),it.ru==='lump sum'?'L.S.':it.ru.replace(/^per /,''),xI(it.amt)]}));
+  br.push({t:'sub',id:'base',fx:{6:`SUM({G@i0}:{G@i${n-1}})`},c:['','Cost of materials and labour','','','','',xI(B.base)]});
+  B.extras.forEach((e,j)=>br.push({t:'item',id:'x'+j,fx:{6:'{G@base}*{E}/100'},c:['',e.l,'','',xN(pv(e.k)),'% of cost',xI(e.amt)]}));
+  br.push({t:'sub',id:'sub',fx:{6:`SUM({G@base}:{G@x${B.extras.length-1}})`},c:['','Sub-total','','','','',xI(B.sub)]});
+  br.push({t:'item',id:'cont',fx:{6:'{G@sub}*{E}/100'},c:['','Contingency','','',xN(pv('cont')),'% of sub-total',xI(B.cont)]});
+  br.push({t:'total',fx:{6:'{G@sub}+{G@cont}'},c:['','GRAND TOTAL','','','','',xI(B.total)]});
+  secs.push({title:(isB?'3':'4')+'. Bill of quantities',cols:bc,rows:br});
+  const notes=isB?[BR.method==='nominal'?'Pakistan rule: the brick size is taken to include its joint, 10% of the wall is mortar and dry mortar is 30 cft per 100 cft; with 5% wastage this gives the usual 1,350 bricks per 100 cft.':`Exact method: the ${BR.joint} mm joint is added to each side of the brick; dry mortar = wet mortar × ${BR.dry}.`,
+      'One 50 kg cement bag = 0.0347 m³ (1,440 kg/m³). Labour norms are from a standard rate analysis for brickwork in 1:6 mortar.',
+      `Rate of brickwork: ${money(imp?B.total/(R.V*FT3_PER_M3)*100:B.total/R.V)} ${imp?'per 100 cft':'per m³'}.`]
+    :['Wet concrete shrinks as cement and sand fill the voids in the crush, so dry materials = wet volume × '+S.dry+'. One 50 kg cement bag = 0.0347 m³.',
+      `Steel weight = d² ÷ 162.2 kg per metre. Every bar run longer than one ${S.stock} ${imp?'ft':'m'} bar gets a lap of ${S.lapD} × bar diameter${kind==='wall'?'; vertical bars also get one lap with the starter bars where marked':''}. Hooks and bends are not included (covered by the wastage %).`,
+      `Rate: ${money(imp?B.total/(R.V*FT3_PER_M3):B.total/R.V)} per ${vu} of concrete, including steel.`];
+  notes.push('Water charges, tools, sundries and profit are worked out on the cost of materials and labour; contingency on the sub-total.','Prepared with Hisab Calculator. Check quantities and rates before use.');
+  const file=`BOQ ${work}${proj?' - '+proj:''} ${iso}`.replace(/[\\/:*?"<>|\n]+/g,'-').slice(0,90);
+  return{title:'Bill of quantities',work,proj,date,file,info,secs,words:pkWords(B.total),notes}
+}
+
+/* ---- CSV ---- */
+function toCSV(doc){const out=[],q=s=>/[",\n\r]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s,row=a=>out.push(a.map(c=>c==null?'':typeof c==='object'?String(c.v):q(String(c))).join(','));
+  row([doc.title.toUpperCase()]);doc.info.forEach(([k,v])=>row([k,v]));row([]);
+  doc.secs.forEach(s=>{row([s.title]);row(s.cols.map(c=>c.h));s.rows.forEach(r=>row(r.c));row([])});
+  row(['Amount in words',doc.words]);row([]);row(['Notes']);doc.notes.forEach(n=>row([n]));
+  return '\ufeff'+out.join('\r\n')+'\r\n'}
+
+/* ---- XLSX (Office Open XML, stored zip) ---- */
+const CRC_T=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+const crc32=b=>{let c=0xFFFFFFFF;for(let i=0;i<b.length;i++)c=CRC_T[(c^b[i])&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0};
+function zipStore(files){const enc=new TextEncoder(),parts=[],cen=[];let off=0;
+  files.forEach(f=>{const nm=enc.encode(f.name),d=typeof f.data==='string'?enc.encode(f.data):f.data,crc=crc32(d);
+    const h=new DataView(new ArrayBuffer(30));h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);h.setUint16(8,0,true);h.setUint16(10,0,true);h.setUint16(12,0x21,true);
+    h.setUint32(14,crc,true);h.setUint32(18,d.length,true);h.setUint32(22,d.length,true);h.setUint16(26,nm.length,true);h.setUint16(28,0,true);
+    const c=new DataView(new ArrayBuffer(46));c.setUint32(0,0x02014b50,true);c.setUint16(4,20,true);c.setUint16(6,20,true);c.setUint16(8,0x0800,true);c.setUint16(10,0,true);c.setUint16(12,0,true);c.setUint16(14,0x21,true);
+    c.setUint32(16,crc,true);c.setUint32(20,d.length,true);c.setUint32(24,d.length,true);c.setUint16(28,nm.length,true);c.setUint32(42,off,true);
+    parts.push(new Uint8Array(h.buffer),nm,d);cen.push(new Uint8Array(c.buffer),nm);off+=30+nm.length+d.length});
+  const cs=cen.reduce((s,a)=>s+a.length,0),e=new DataView(new ArrayBuffer(22));e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,cs,true);e.setUint32(16,off,true);
+  const all=[...parts,...cen,new Uint8Array(e.buffer)],out=new Uint8Array(all.reduce((s,a)=>s+a.length,0));let p=0;all.forEach(a=>{out.set(a,p);p+=a.length});return out}
+function toXLSX(doc){
+  const X=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g,'');
+  const COL='ABCDEFGHI',W=[7,40,13,13,13,13,13,13,13],FMT={0:3,1:164,2:4,3:165};
+  const xfs=[],xk={};const st=(font,fill,border,fmt,h,wrap)=>{const k=[font,fill,border,fmt,h,wrap].join();if(xk[k]==null){xk[k]=xfs.length;
+    xfs.push(`<xf numFmtId="${fmt}" fontId="${font}" fillId="${fill}" borderId="${border}" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment${h?` horizontal="${h}"`:''} vertical="top"${wrap?' wrapText="1"':''}/></xf>`)}return xk[k]};
+  st(0,0,0,0,'',0);
+  const rows=[],merges=[],ids={};let r=0;const put=(cells,o={})=>{r++;if(o.id)ids[o.id]=r;rows.push({r,cells,ht:o.ht});return r};
+  put([{c:0,v:doc.title.toUpperCase(),s:st(2,0,0,0,'',0)}],{ht:24});merges.push('A1:I1');
+  r++;doc.info.forEach(([k,v])=>{const n=put([{c:0,v:k,s:st(1,0,1,0,'',1)},{c:2,v,s:st(0,0,1,0,'',1)}],{ht:v.length>95?30:null});
+    for(let i=1;i<9;i++)if(i!==2)rows[rows.length-1].cells.push({c:i,v:'',s:st(i<2?1:0,0,1,0,'',0)});rows[rows.length-1].cells.sort((a,b)=>a.c-b.c);merges.push(`A${n}:B${n}`,`C${n}:I${n}`)});
+  doc.secs.forEach(sec=>{r++;put([{c:0,v:sec.title,s:st(4,0,0,0,'',0)}],{ht:20});
+    const hs=st(1,2,1,0,'center',1);put(sec.cols.map((c,i)=>({c:i,v:c.h,s:hs})),{ht:30});
+    sec.rows.forEach(row=>{const fo=row.t==='sub'||row.t==='total'||row.t==='grp'?1:row.t==='ded'?5:0,fi=row.t==='sub'?3:row.t==='total'?4:0;let lines=1;
+      const cells=sec.cols.map((col,i)=>{const c=row.c[i],h=col.a==='r'?'right':col.a==='c'?'center':'';
+        if(c&&typeof c==='object')return{c:i,v:c.v,s:st(fo,fi,1,FMT[c.d]??4,'',0),f:row.fx&&row.fx[i]};
+        const s=c==null?'':String(c);lines=Math.max(lines,s.split('\n').reduce((a,p)=>a+Math.max(1,Math.ceil(p.length*1.15/W[i])),0));
+        return{c:i,v:s,s:st(fo,fi,1,0,h,1)}});
+      put(cells,{id:row.id,ht:lines>1?lines*13+2:null})})});
+  r++;const wn=put([{c:0,v:'Amount in words',s:st(1,3,1,0,'',1)},{c:1,v:'',s:st(1,3,1,0,'',0)},{c:2,v:doc.words,s:st(1,3,1,0,'',1)},...[3,4,5,6,7,8].map(i=>({c:i,v:'',s:st(1,3,1,0,'',0)}))],{ht:30});merges.push(`A${wn}:B${wn}`,`C${wn}:I${wn}`);
+  r++;put([{c:0,v:'Notes',s:st(1,0,0,0,'',0)}]);doc.notes.forEach(t=>put([{c:0,v:'• '+t,s:st(3,0,0,0,'',0)}]));
+  r+=2;const sg=put([{c:0,v:'Prepared by: ____________________',s:0},{c:3,v:'Checked by: ________________',s:0},{c:6,v:'Approved by: ________________',s:0}]);
+  const fres=(f,n)=>f.replace(/\{([A-I])(?:@(\w+))?\}/g,(_,c,id)=>c+(id?ids[id]:n));
+  const sd=rows.map(row=>`<row r="${row.r}"${row.ht?` ht="${row.ht}" customHeight="1"`:''}>`+row.cells.map(c=>{const a=COL[c.c]+row.r;
+    if(typeof c.v==='number')return `<c r="${a}" s="${c.s}">${c.f?`<f>${fres(c.f,row.r)}</f>`:''}<v>${c.v}</v></c>`;
+    if(c.v==='')return `<c r="${a}" s="${c.s}"/>`;
+    return `<c r="${a}" s="${c.s}" t="inlineStr"><is><t xml:space="preserve">${X(c.v)}</t></is></c>`}).join('')+'</row>').join('');
+  const NS='http://schemas.openxmlformats.org/spreadsheetml/2006/main',RNS='http://schemas.openxmlformats.org/officeDocument/2006/relationships',H='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
+  const bd=c=>`<${c} style="thin"><color rgb="FF8A929C"/></${c}>`,fill=c=>`<fill><patternFill patternType="solid"><fgColor rgb="${c}"/><bgColor indexed="64"/></patternFill></fill>`,font=(x,sz,col)=>`<font>${x}<sz val="${sz}"/>${col?`<color rgb="${col}"/>`:''}<name val="Arial"/><family val="2"/></font>`;
+  const styles=`${H}<styleSheet xmlns="${NS}"><numFmts count="2"><numFmt numFmtId="164" formatCode="#,##0.0"/><numFmt numFmtId="165" formatCode="#,##0.000"/></numFmts>
+<fonts count="6">${font('',10)}${font('<b/>',10)}${font('<b/>',15,'FF0F2A47')}${font('<i/>',9,'FF555555')}${font('<b/>',11,'FF0F2A47')}${font('<i/>',10,'FF7A2020')}</fonts>
+<fills count="5"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>${fill('FFD5DCE6')}${fill('FFEEF1F5')}${fill('FFC5D0DE')}</fills>
+<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border>${bd('left')}${bd('right')}${bd('top')}${bd('bottom')}<diagonal/></border></borders>
+<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="${xfs.length}">${xfs.join('')}</cellXfs>
+<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
+  const sheet=`${H}<worksheet xmlns="${NS}" xmlns:r="${RNS}"><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><dimension ref="A1:I${r}"/><sheetViews><sheetView showGridLines="0" workbookViewId="0"/></sheetViews><sheetFormatPr defaultRowHeight="13.5"/>
+<cols>${W.map((w,i)=>`<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`).join('')}</cols><sheetData>${sd}</sheetData>
+<mergeCells count="${merges.length}">${merges.map(m=>`<mergeCell ref="${m}"/>`).join('')}</mergeCells>
+<pageMargins left="0.4" right="0.4" top="0.5" bottom="0.6" header="0.3" footer="0.3"/><pageSetup paperSize="9" orientation="portrait" fitToWidth="1" fitToHeight="0"/>
+<headerFooter><oddFooter>&amp;L&amp;8${X(doc.work)} · Bill of quantities&amp;R&amp;8Page &amp;P of &amp;N</oddFooter></headerFooter></worksheet>`;
+  return zipStore([
+    {name:'[Content_Types].xml',data:`${H}<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`},
+    {name:'_rels/.rels',data:`${H}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="${RNS}/officeDocument" Target="xl/workbook.xml"/></Relationships>`},
+    {name:'xl/workbook.xml',data:`${H}<workbook xmlns="${NS}" xmlns:r="${RNS}"><sheets><sheet name="BOQ" sheetId="1" r:id="rId1"/></sheets><calcPr calcId="191029" fullCalcOnLoad="1"/></workbook>`},
+    {name:'xl/_rels/workbook.xml.rels',data:`${H}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="${RNS}/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="${RNS}/styles" Target="styles.xml"/></Relationships>`},
+    {name:'xl/styles.xml',data:styles},{name:'xl/worksheets/sheet1.xml',data:sheet}])}
+
+/* ---- PDF (A4, Helvetica, WinAnsi) ---- */
+const PDFMAP={'−':'-','–':'\x96','—':'\x97','•':'\x95','‘':'\x91','’':'\x92','“':'\x93','”':'\x94','′':"'",'″':'"','⅛':'1/8','⅜':'3/8','⅝':'5/8','⅞':'7/8','≈':'~','π':'pi','…':'...','²':'2','³':'3'};
+const pdfStr=s=>String(s).replace(/[^\x00-\xFF]|[²³]/g,ch=>PDFMAP[ch]??'?');
+const HW=[278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584];
+const HX={0x95:350,0x96:556,0x97:1000,0x91:222,0x92:222,0x93:333,0x94:333,0xA0:278,0xB0:400,0xB2:333,0xB3:333,0xB7:278,0xBC:834,0xBD:834,0xBE:834,0xD7:584};
+const tw=(s,size,bold)=>{let w=0;for(const ch of pdfStr(s)){const c=ch.charCodeAt(0);let x=c>=32&&c<127?HW[c-32]:HX[c]||556;if(bold&&!/[0-9,. \-]/.test(ch))x*=1.1;w+=x}return w*size/1000};
+const pe=s=>pdfStr(s).replace(/[\\()]/g,'\\$&').replace(/[\x80-\xFF]/g,c=>'\\'+c.charCodeAt(0).toString(8).padStart(3,'0'));
+const wrapT=(s,mw,size,bold)=>{const out=[];pdfStr(s).split('\n').forEach(par=>{let line='';par.split(' ').forEach(word=>{const t=line?line+' '+word:word;
+    if(tw(t,size,bold)<=mw){line=t;return}if(line)out.push(line);
+    while(word.length>1&&tw(word,size,bold)>mw){let k=word.length;while(k>1&&tw(word.slice(0,k),size,bold)>mw)k--;out.push(word.slice(0,k));word=word.slice(k)}line=word});out.push(line)});return out};
+function toPDF(doc){
+  const PW=595.28,PH=841.89,MX=34,CW=PW-2*MX,TOP=PH-50,BOT=46,f2=v=>v.toFixed(2);const pages=[];let ops,y;
+  const T=(s,x,yy,size,bold,gray=0)=>ops.push(`${gray} g BT /${bold?'F2':'F1'} ${size} Tf ${f2(x)} ${f2(yy)} Td (${pe(s)}) Tj ET`);
+  const box=(x,yy,w,h,fill)=>ops.push(`${fill} g ${f2(x)} ${f2(yy)} ${f2(w)} ${f2(h)} re f`),line=(x,yy,w,h)=>ops.push(`0.6 w 0.5 G ${f2(x)} ${f2(yy)} ${f2(w)} ${f2(h)} re S`);
+  const page=()=>{ops=[];pages.push(ops);y=TOP;T(`${doc.work} · Bill of quantities${doc.proj?' · '+doc.proj:''}`,MX,PH-30,7.5,false,0.4);
+    T('HISAB CALCULATOR',PW-MX-tw('HISAB CALCULATOR',7.5,true),PH-30,7.5,true,0.4);ops.push(`0.5 w 0.6 G ${MX} ${f2(PH-35)} m ${f2(PW-MX)} ${f2(PH-35)} l S`)};
+  const need=h=>{if(y-h<BOT){page();return true}return false};
+  page();
+  let s=doc.title.toUpperCase();T(s,(PW-tw(s,17,true))/2,y-14,17,true,0.06);y-=21;
+  s=doc.work+' estimate';T(s,(PW-tw(s,11,false))/2,y-10,11,false,0.3);y-=24;
+  const KW=112;doc.info.forEach(([k,v])=>{const L=wrapT(v,CW-KW-10,8.5,false),h=L.length*11+6;need(h);
+    box(MX,y-h,KW,h,0.92);line(MX,y-h,KW,h);line(MX+KW,y-h,CW-KW,h);T(k,MX+5,y-12,8.5,true);L.forEach((l,j)=>T(l,MX+KW+5,y-12-j*11,8.5,false));y-=h});
+  y-=16;
+  const FS=8,LH=10,PAD=3.5;
+  doc.secs.forEach(sec=>{const tot=sec.cols.reduce((a,c)=>a+c.w,0),ws=sec.cols.map(c=>c.w/tot*CW),xs=[];let acc=MX;ws.forEach(w=>{xs.push(acc);acc+=w});
+    const hl=sec.cols.map((c,i)=>wrapT(c.h,ws[i]-2*PAD,7.5,true)),hh=Math.max(...hl.map(l=>l.length))*9+2*PAD;
+    const head=()=>{sec.cols.forEach((c,i)=>box(xs[i],y-hh,ws[i],hh,0.8));sec.cols.forEach((c,i)=>{line(xs[i],y-hh,ws[i],hh);hl[i].forEach((l,j)=>T(l,xs[i]+(ws[i]-tw(l,7.5,true))/2,y-PAD-7-j*9,7.5,true))});y-=hh};
+    need(18+hh+LH+2*PAD+4);T(sec.title,MX,y-11,10.5,true,0.06);y-=17;head();
+    sec.rows.forEach(row=>{const bold=row.t==='sub'||row.t==='total'||row.t==='grp',ind=row.t==='ded'?8:0;
+      const cells=sec.cols.map((c,i)=>wrapT(cTxt(row.c[i]),ws[i]-2*PAD-(i===1?ind:0),FS,bold)),h=Math.max(...cells.map(l=>l.length))*LH+2*PAD-1;
+      if(need(h))head();
+      const fill=row.t==='total'?0.78:row.t==='sub'?0.9:row.t==='grp'?0.95:null;
+      if(fill!=null)sec.cols.forEach((c,i)=>box(xs[i],y-h,ws[i],h,fill));
+      sec.cols.forEach((c,i)=>{line(xs[i],y-h,ws[i],h);cells[i].forEach((l,j)=>{const w=tw(l,FS,bold),x=c.a==='r'?xs[i]+ws[i]-PAD-w:c.a==='c'?xs[i]+(ws[i]-w)/2:xs[i]+PAD+(i===1?ind:0);
+        T(l,x,y-PAD-FS*0.78-j*LH,FS,bold,row.t==='ded'?0.35:0)})});
+      y-=h});
+    y-=16});
+  const wl=wrapT('Amount in words: '+doc.words,CW-14,9,true),wh=wl.length*12+10;need(wh);box(MX,y-wh,CW,wh,0.9);line(MX,y-wh,CW,wh);wl.forEach((l,j)=>T(l,MX+7,y-15-j*12,9,true));y-=wh+18;
+  need(30);T('Notes',MX,y-10,9.5,true);y-=16;
+  doc.notes.forEach(n=>{const L=wrapT(n,CW-12,7.5,false),h=L.length*9.5+3;need(h);T('\x95',MX+1,y-8,7.5,false,0.35);L.forEach((l,j)=>T(l,MX+10,y-8-j*9.5,7.5,false,0.3));y-=h});
+  need(70);y-=46;['Prepared by','Checked by','Approved by'].forEach((l,i)=>{const x=MX+i*CW/3;ops.push(`0.6 w 0 G ${f2(x+2)} ${f2(y)} m ${f2(x+CW/3-16)} ${f2(y)} l S`);T(l,x+2,y-11,8,false,0.3)});
+  const np=pages.length;pages.forEach((o,i)=>{ops=o;T(doc.date,MX,24,7.5,false,0.45);const p=`Page ${i+1} of ${np}`;T(p,PW-MX-tw(p,7.5,false),24,7.5,false,0.45)});
+  let out='%PDF-1.4\n%\xE2\xE3\xCF\xD3\n';const offs=[],obj=(n,b)=>{offs[n]=out.length;out+=`${n} 0 obj\n${b}\nendobj\n`};
+  obj(1,'<< /Type /Catalog /Pages 2 0 R >>');obj(2,`<< /Type /Pages /Kids [${pages.map((_,i)=>`${6+2*i} 0 R`).join(' ')}] /Count ${np} >>`);
+  obj(3,'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>');obj(4,'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>');
+  obj(5,`<< /Title (${pe(doc.file)}) /Producer (Hisab Calculator) /Creator (Hisab Calculator) >>`);
+  pages.forEach((o,i)=>{const c=o.join('\n');obj(6+2*i,`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PW} ${PH}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${7+2*i} 0 R >>`);obj(7+2*i,`<< /Length ${c.length} >>\nstream\n${c}\nendstream`)});
+  const n=6+2*np,xr=out.length;out+=`xref\n0 ${n}\n0000000000 65535 f \n`;for(let i=1;i<n;i++)out+=String(offs[i]).padStart(10,'0')+' 00000 n \n';
+  return out+`trailer\n<< /Size ${n} /Root 1 0 R /Info 5 0 R >>\nstartxref\n${xr}\n%%EOF\n`}
+
+/* ---- make the file and hand it to the phone, Windows or the browser ---- */
+const B64=u=>{let s='';for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s)};
+function boqFile(kind,fmt){const doc=boqDoc(kind);
+  if(fmt==='csv')return{name:doc.file+'.csv',mime:'text/csv',b64:B64(new TextEncoder().encode(toCSV(doc)))};
+  if(fmt==='pdf')return{name:doc.file+'.pdf',mime:'application/pdf',b64:btoa(toPDF(doc))};
+  return{name:doc.file+'.xlsx',mime:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',b64:B64(toXLSX(doc))}}
+function boqDeliver(f){const P=window.hisabPC;
+  if(P&&P.saveFile){P.saveFile(f.name,f.b64).then(p=>{if(p)toast('Saved: '+p)}).catch(()=>toast('Could not save the file'));return}
+  try{const bin=atob(f.b64),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);
+    const url=URL.createObjectURL(new Blob([u],{type:f.mime})),a=document.createElement('a');a.href=url;a.download=f.name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),5000);
+    toast(window.top!==window?'Files save from the phone or Windows app':'Downloaded '+f.name)}catch(e){toast('Could not export here')}}
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-exp]');if(!b)return;
+  const sec=b.closest('section'),kind={brick:'brick',rcw:'wall',rcs:'slab'}[sec&&sec.id];if(!kind)return;
+  let f;try{f=boqFile(kind,b.dataset.exp)}catch(err){toast(err.message||'Could not make the file');return}
+  const A=window.HisabAndroid;
+  if(A&&A.saveFile){const body=sheet('expSheet','Export bill');
+    body.innerHTML=`<p class="hint" style="overflow-wrap:anywhere">${esc(f.name)}</p><div class="exprow" style="grid-template-columns:1fr 1fr"><button class="op primary" data-how="save">Save to phone</button><button class="op" data-how="share">Share · WhatsApp, email</button></div>`;
+    body.querySelectorAll('[data-how]').forEach(x=>x.onclick=()=>{$('#expSheet').hidden=true;try{if(x.dataset.how==='share')A.shareFile(f.name,f.mime,f.b64);else A.saveFile(f.name,f.mime,f.b64)}catch(er){toast('Could not export')}});return}
+  boqDeliver(f)});
+document.addEventListener('input',e=>{const t=e.target;if(!t.matches||!t.matches('[data-proj]'))return;store.set('boqProj',t.value);document.querySelectorAll('[data-proj]').forEach(x=>{if(x!==t)x.value=t.value})});
+document.querySelectorAll('[data-proj]').forEach(x=>x.value=store.get('boqProj','')||'');
 
 /* ---------- boot ---------- */
 
