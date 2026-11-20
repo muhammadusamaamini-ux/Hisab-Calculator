@@ -43,7 +43,15 @@ nav a{text-align:center;padding:6px 4px;border-radius:8px;color:var(--muted);tex
 nav a[aria-current="page"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px var(--shadow)}
 a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 section{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;gap:8px}
-#units,#site,#brick{overflow-y:auto}
+#units,#site,#brick,#rcw,#rcs{overflow-y:auto}
+.ptbl{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,.9fr) minmax(0,1fr) minmax(0,1fr) 1.6rem;gap:5px;align-items:center}
+.ptbl select{padding:7px 4px;font-size:.85rem}
+.ti:disabled{opacity:.35}
+table.boq{font-size:.8rem}
+.boq th,.boq td{padding:6px 3px}
+.boq .rate{width:4.3rem}
+.boq td:nth-child(2){min-width:0;overflow-wrap:anywhere}
+.ptbl{grid-template-columns:minmax(0,1.25fr) minmax(0,.6fr) minmax(0,1fr) minmax(0,1fr) 1.6rem}
 .sgrid .full{grid-column:1/-1}
 .wcard{border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px;background:var(--key)}
 .whead{display:flex;gap:8px;align-items:center}
@@ -383,6 +391,39 @@ input[type=number]{font-family:var(--f-num)}
     </div>
   </section>
 
+  <!-- RCC WALL and RCC SLAB -->
+  <section id="rcw" hidden>
+    <div class="backbar"><button class="backbtn" data-go="calc" aria-label="Back to the scientific calculator">‹ Calculator</button><b>RCC wall</b><button class="backbtn" data-go="mode">MODE</button></div>
+    <div class="panel"><h2>Concrete and steel</h2><div id="rcw-setup"></div></div>
+    <div class="panel"><h2>Walls</h2>
+      <p class="hint">Enter each wall. Same walls: enter once and set <b>Same ×</b>. Openings of the same size go in one row with <b>How many</b>.</p>
+      <div id="rcw-items"></div>
+      <button class="op primary" data-additem="1">+ Add wall</button>
+    </div>
+    <div class="panel"><h2>Quantities</h2><div id="rcw-sum"></div></div>
+    <div class="panel"><h2>Bill of quantities</h2>
+      <p class="hint">Starting rates (2026): cement Rs 1,350 a bag, sand Rs 65 and crush Rs 150 a cft, Grade 60 steel Rs 265 a kg (market Rs 252–279, Nov 2026), shuttering Rs 47 a ft², concrete labour Rs 75 a cft and steel fixing Rs 18 a kg (worked out from a 2026 Pakistan slab estimate). Binding wire Rs 400 a kg is an estimate. Change any rate to your city's.</p>
+      <div id="rcw-boq"></div>
+      <div class="row" style="gap:6px"><button class="op primary" data-copyboq="1">Copy BOQ</button><button class="op" data-new="1">Start a new estimate</button></div>
+    </div>
+  </section>
+
+  <section id="rcs" hidden>
+    <div class="backbar"><button class="backbtn" data-go="calc" aria-label="Back to the scientific calculator">‹ Calculator</button><b>RCC slab</b><button class="backbtn" data-go="mode">MODE</button></div>
+    <div class="panel"><h2>Concrete and steel</h2><div id="rcs-setup"></div></div>
+    <div class="panel"><h2>Slabs</h2>
+      <p class="hint">Build the slab shape from parts: one rectangle for a plain slab, two for an L shape, three for a U shape. Use <b>− cut</b> for shafts, stair openings or cut corners.</p>
+      <div id="rcs-items"></div>
+      <button class="op primary" data-additem="1">+ Add slab</button>
+    </div>
+    <div class="panel"><h2>Quantities</h2><div id="rcs-sum"></div></div>
+    <div class="panel"><h2>Bill of quantities</h2>
+      <p class="hint">Starting rates (2026): cement Rs 1,350 a bag, sand Rs 65 and crush Rs 150 a cft, Grade 60 steel Rs 265 a kg (market Rs 252–279, Nov 2026), shuttering Rs 47 a ft², concrete labour Rs 75 a cft and steel fixing Rs 18 a kg (worked out from a 2026 Pakistan slab estimate). Binding wire Rs 400 a kg is an estimate. Change any rate to your city's.</p>
+      <div id="rcs-boq"></div>
+      <div class="row" style="gap:6px"><button class="op primary" data-copyboq="1">Copy BOQ</button><button class="op" data-new="1">Start a new estimate</button></div>
+    </div>
+  </section>
+
   <!-- SITE: engineering calculators -->
   <section id="site" hidden>
     <div class="backbar"><button class="backbtn" data-go="calc" aria-label="Back to the scientific calculator">‹ Calculator</button><b>Site calculators</b><button class="backbtn" data-go="mode">MODE</button></div>
@@ -518,7 +559,7 @@ const sup=s=>s.replace(/×10\^(-?\d+)/,(m,d)=>'×10'+[...d].map(c=>SUP[c]).join(
 const fmtD=x=>sup(fmt(x));
 
 /* ---------- tabs ---------- */
-const TABS=['calc','units','feet','site','brick'];
+const TABS=['calc','units','feet','site','brick','rcw','rcs'];
 function showTab(){
   const t=TABS.includes(location.hash.slice(1))?location.hash.slice(1):'calc';
   TABS.forEach(id=>{$('#'+id).hidden=id!==t});
@@ -1053,6 +1094,8 @@ function act(a){
     case 'feet':location.hash='feet';return;
     case 'site':location.hash='site';return;
     case 'brick':location.hash='brick';return;
+    case 'rcw':location.hash='rcw';return;
+    case 'rcs':location.hash='rcs';return;
     case 'concrete':openSiteCalc('concrete-volume');return;
     case 'vars':openVars();return;
     case 'sto':sto=true;toast('STO: now press a variable key (ALPHA letters A–F, X, Y, M, T)');return;
@@ -1186,7 +1229,7 @@ const segHTML=(key,opts,cur)=>`<div class="seg" style="grid-template-columns:rep
 function openMode(){
   const b=sheet('modeSheet','MODE and setup');
   b.innerHTML=`<h3>Civil engineering</h3>
-  <div class="opgrid">${[['brick','BRICKWORK · bricks, mortar, BOQ'],['concrete','CONCRETE · volume']].map(([k,l])=>`<button class="op civ" data-act="${k}">${l}</button>`).join('')}</div>
+  <div class="opgrid">${[['brick','BRICKWORK · bricks, mortar, BOQ'],['rcw','RCC WALL · concrete, steel, BOQ'],['rcs','RCC SLAB · any shape, steel, BOQ'],['concrete','CONCRETE · volume only']].map(([k,l])=>`<button class="op civ" data-act="${k}">${l}</button>`).join('')}</div>
   <h3>Calculators</h3>
   <div class="opgrid">${[['units','UNITS · conversion'],['feet','FEET-INCHES'],['eqn','EQN · equations'],['matrix','MATRIX'],['vector','VECTOR'],['stat','STAT'],['distr','DISTR'],['func','TABLE · f(x)']].map(([k,l])=>`<button class="op" data-act="${k}">${l}</button>`).join('')}</div>
   <h3>Angle unit</h3>${segHTML('ang',[['DEG','Degrees'],['RAD','Radians'],['GRA','Grads']],ang)}
@@ -1986,6 +2029,211 @@ function brBoqText(){if(!brLast)return '';const{R,B}=brLast,imp=BR.units==='imp'
   });
 })();
 paintBrick();
+
+/* ================= RCC WALL and RCC SLAB =================
+   Concrete (nominal mix): dry volume = wet volume × 1.54 (wet concrete shrinks as the voids fill),
+   cement = dry × c/(c+s+a); one 50 kg bag = 50 ÷ 1440 = 0.0347 m³; sand = dry × s/(...); crush = dry × a/(...);
+   water = water–cement ratio × cement weight.
+   Steel: weight kg/m = d² ÷ 162.2 (d in mm). Bars come in stock lengths (40 ft / 12 m); a run longer than one bar
+   needs laps: bars = ceil((run − lap) ÷ (stock − lap)), extra length = (bars − 1) × lap. Lap = 40d walls, 50d slabs.
+   Wall vertical bars can also lap with starter bars from the foundation (one extra lap each). */
+const BARS={'#3':9.525,'#4':12.7,'#5':15.875,'#6':19.05,'#7':22.225,'#8':25.4,'8 mm':8,'10 mm':10,'12 mm':12,'16 mm':16,'20 mm':20,'25 mm':25};
+const BAR_LBL={'#3':'#3 (⅜″ ≈ 10 mm)','#4':'#4 (½″ ≈ 12 mm)','#5':'#5 (⅝″ ≈ 16 mm)','#6':'#6 (¾″ ≈ 19 mm)','#7':'#7 (⅞″ ≈ 22 mm)','#8':'#8 (1″ ≈ 25 mm)','8 mm':'8 mm','10 mm':'10 mm','12 mm':'12 mm','16 mm':'16 mm','20 mm':'20 mm','25 mm':'25 mm'};
+const kgPerM=b=>BARS[b]*BARS[b]/162.2;
+const CMIX=['1:1.5:3','1:2:4','1:3:6','1:4:8'];
+const newRcWall=n=>({name:'Wall '+n,L:'',H:'',t:'8',n:'1',open:[],vb:'#4',vs:'12',hb:'#3',hs:'12',layers:'2',starter:'1'});
+const newRcSlab=n=>({name:'Slab '+n,t:'5',n:'1',parts:[{k:'rect',sg:'+',a:'',b:''}],xb:'#4',xs:'6',yb:'#3',ys:'9',top:'0'});
+const RC_DEF={
+  wall:{units:'imp',mix:'1:2:4',dry:'1.54',cw:'2',wc:'0.5',stock:'40',lapD:'40',cover:'1.5',sw:'3',wire:'8',items:[newRcWall(1)]},
+  slab:{units:'imp',mix:'1:2:4',dry:'1.54',cw:'2',wc:'0.5',stock:'40',lapD:'50',cover:'0.75',sw:'3',wire:'8',items:[newRcSlab(1)]},
+  rates:{cement:'1350',sandCft:'65',sandM3:'2295',crushCft:'150',crushM3:'5297',steel:'265',wire:'400',shutFt:'47',shutM2:'506',labCft:'75',labM3:'2649',labSteel:'18'},
+  pct:{water:'1.5',tools:'1.5',sundry:'3',profit:'10',cont:'5'}};
+let RC=(()=>{const s=store.get('rcc',null),d=JSON.parse(JSON.stringify(RC_DEF));if(!s)return d;
+  return{wall:Object.assign(d.wall,s.wall||{}),slab:Object.assign(d.slab,s.slab||{}),rates:Object.assign(d.rates,s.rates||{}),pct:Object.assign(d.pct,s.pct||{})}})();
+const saveRC=()=>store.set('rcc',RC);
+const rcNum=(s,label,blank0)=>{s=String(s??'').trim();if(s===''){if(blank0)return 0;throw Error(label+' is empty')}const v=rl(run(s,false).r,label);if(!isFinite(v))throw Error(label+' is not a number');return v};
+const rcLen=(s,label,u)=>{s=String(s??'').trim();if(s==='')throw Error(label+' is empty');if(u==='imp'){const r=ftEval(s);if(r.d!==1)throw Error(label+': type feet and inches like 12 6');return r.v*0.0254}return rcNum(s,label)};
+const rcSmall=(s,label,u)=>rcNum(s,label)*(u==='imp'?0.0254:0.001);
+const lapsAdd=(run,stock,lap)=>{if(run<=stock+1e-9)return 0;if(stock<=lap)throw Error('The bar length must be longer than the lap length');const k=Math.ceil((run-lap)/(stock-lap)-1e-9);return(k-1)*lap};
+const nBars=(clear,sp)=>clear<=0?0:Math.floor(clear/sp+1e-9)+1;
+function rcCommon(kind){const S=RC[kind],u=S.units;
+  return{S,u,c:rcSmall(S.cover,'Cover',u),stock:u==='imp'?rcNum(S.stock,'Bar length')*0.3048:rcNum(S.stock,'Bar length'),lapD:rcNum(S.lapD,'Lap length')}}
+function rcCalc(kind){
+  const{S,u,c,stock,lapD}=rcCommon(kind),steel={},items=[];let V=0,shut=0,area=0;
+  const addSteel=(bar,len)=>{steel[bar]=(steel[bar]||0)+len};
+  S.items.forEach((it,i)=>{const r={i,ok:false};items.push(r);
+    try{
+      const n=Math.max(0,rcNum(it.n,it.name+' count'));
+      if(kind==='wall'){
+        const L=rcLen(it.L,it.name+' length',u),H=rcLen(it.H,it.name+' height',u),t=rcSmall(it.t,it.name+' thickness',u);
+        let oa=0,rev=0;it.open.forEach((o,k)=>{const w=rcLen(o.w,`${it.name} opening ${k+1} width`,u),h=rcLen(o.h,`${it.name} opening ${k+1} height`,u),on=rcNum(o.n,'Opening count');oa+=w*h*on;rev+=2*(w+h)*t*on});
+        const face=L*H,net=Math.max(0,face-oa),f=face>0?net/face:0;
+        const sv=rcSmall(it.vs,'Vertical spacing',u),sh=rcSmall(it.hs,'Horizontal spacing',u);if(sv<=0||sh<=0)throw Error('Spacing must be more than 0');
+        const lv=lapD*BARS[it.vb]/1000,lh=lapD*BARS[it.hb]/1000,layers=rcNum(it.layers,'Layers');
+        let vlen=H-c+(it.starter==='1'?lv:0);vlen+=lapsAdd(vlen,stock,lv);
+        const nv=nBars(L-2*c,sv),nh=nBars(H-2*c,sh),hrun=L-2*c,hlen=hrun+lapsAdd(hrun,stock,lh);
+        const vt=nv*vlen*f*layers*n,ht=nh*hlen*f*layers*n;
+        addSteel(it.vb,vt);addSteel(it.hb,ht);
+        const conc=net*t*n;V+=conc;area+=net*n;shut+=(2*net+rev+2*H*t)*n;
+        Object.assign(r,{ok:true,conc,area:net*n,kg:vt*kgPerM(it.vb)+ht*kgPerM(it.hb),detail:`${nv} vertical × ${q2(u==='imp'?vlen/0.3048:vlen)} ${u==='imp'?'ft':'m'}, ${nh} horizontal × ${q2(u==='imp'?hlen/0.3048:hlen)} ${u==='imp'?'ft':'m'} per layer`});
+      }else{
+        const t=rcSmall(it.t,it.name+' thickness',u),sx=rcSmall(it.xs,'X spacing',u),sy=rcSmall(it.ys,'Y spacing',u);if(sx<=0||sy<=0)throw Error('Spacing must be more than 0');
+        const lx=lapD*BARS[it.xb]/1000,ly=lapD*BARS[it.yb]/1000;let A=0,xl=0,yl=0;
+        it.parts.forEach((p,k)=>{const nm=`${it.name} part ${k+1}`,sg=p.sg==='−'?-1:1,a=rcLen(p.a,nm+(p.k==='circle'?' diameter':' length'),u),b=p.k==='circle'?a:rcLen(p.b,nm+(p.k==='tri'?' height':' width'),u);
+          const pa=p.k==='rect'?a*b:p.k==='tri'?a*b/2:Math.PI*a*a/4;A+=sg*pa;
+          if(p.k==='rect'&&sg>0){xl+=nBars(b-2*c,sx)*(a-2*c+lapsAdd(a-2*c,stock,lx));yl+=nBars(a-2*c,sy)*(b-2*c+lapsAdd(b-2*c,stock,ly))}
+          else if(p.k==='rect'){xl-=Math.floor(b/sx+1e-9)*a;yl-=Math.floor(a/sy+1e-9)*b}
+          else{const runL=Math.max(a,b),fx=sg>0?1+lapsAdd(runL,stock,lx)/runL:1,fy=sg>0?1+lapsAdd(runL,stock,ly)/runL:1;xl+=sg*pa/sx*fx;yl+=sg*pa/sy*fy}});
+        if(A<=0)throw Error(it.name+': the shape has no area (check + and − parts)');
+        const mesh=it.top==='1'?2:1;xl=Math.max(0,xl)*mesh*n;yl=Math.max(0,yl)*mesh*n;
+        addSteel(it.xb,xl);addSteel(it.yb,yl);
+        const conc=A*t*n;V+=conc;area+=A*n;shut+=A*n;
+        Object.assign(r,{ok:true,conc,area:A*n,kg:xl*kgPerM(it.xb)+yl*kgPerM(it.yb),detail:`area ${u==='imp'?q2(A*FT2_PER_M2)+' ft²':q2(A)+' m²'} per slab`});
+      }
+    }catch(e){r.err=e.message}});
+  const mx=S.mix.split(':').map(Number),sum=mx[0]+mx[1]+mx[2],dryF=rcNum(S.dry,'Dry volume factor'),Vw=V*(1+rcNum(S.cw,'Concrete wastage')/100),dry=Vw*dryF;
+  const cementKg=dry*mx[0]/sum*1440,sw=rcNum(S.sw,'Steel wastage')/100;
+  const bars=Object.entries(steel).filter(([,l])=>l>0).map(([b,l])=>{const L=l*(1+sw);return{b,len:L,kg:L*kgPerM(b),stockBars:Math.ceil(L/stock-1e-9)}});
+  const kg=bars.reduce((s,x)=>s+x.kg,0);
+  return{items,V,Vw,dry,area,shut,cementKg,bags:cementKg/50,sand:dry*mx[1]/sum,crush:dry*mx[2]/sum,water:rcNum(S.wc,'Water–cement ratio')*cementKg,bars,kg,tons:kg/1000,wire:kg/1000*rcNum(S.wire,'Binding wire'),stock};
+}
+function rcBOQ(kind,R){
+  const S=RC[kind],imp=S.units==='imp',r=k=>rcNum(RC.rates[k],'Rate',true),p=k=>rcNum(RC.pct[k],'Percentage',true)/100;
+  const vq=v=>imp?v*FT3_PER_M3:v,vu=imp?'cft':'m³',bags=Math.ceil(R.bags-1e-9),wireKg=Math.ceil(R.wire-1e-9);
+  const items=[
+    {d:'Cement, 50 kg bags',q:bags,u:'bags',rk:'cement',ru:'per bag',amt:bags*r('cement'),qf:x=>fmt(x)},
+    {d:'Sand',q:vq(R.sand),u:vu,rk:imp?'sandCft':'sandM3',ru:'per '+vu,amt:vq(R.sand)*r(imp?'sandCft':'sandM3'),qf:q2},
+    {d:'Crush (coarse aggregate)',q:vq(R.crush),u:vu,rk:imp?'crushCft':'crushM3',ru:'per '+vu,amt:vq(R.crush)*r(imp?'crushCft':'crushM3'),qf:q2},
+    {d:`Steel, Grade 60 (${q2(R.tons)} tons)`,q:R.kg,u:'kg',rk:'steel',ru:'per kg',amt:R.kg*r('steel'),qf:x=>Math.round(x).toLocaleString('en-US')},
+    {d:'Binding wire',q:wireKg,u:'kg',rk:'wire',ru:'per kg',amt:wireKg*r('wire'),qf:x=>fmt(x)},
+    {d:'Shuttering (formwork)',q:imp?R.shut*FT2_PER_M2:R.shut,u:imp?'ft²':'m²',rk:imp?'shutFt':'shutM2',ru:imp?'per ft²':'per m²',amt:(imp?R.shut*FT2_PER_M2:R.shut)*r(imp?'shutFt':'shutM2'),qf:q2},
+    {d:'Labour: mixing, pouring, curing',q:vq(R.V),u:vu,rk:imp?'labCft':'labM3',ru:'per '+vu,amt:vq(R.V)*r(imp?'labCft':'labM3'),qf:q2},
+    {d:'Labour: steel cutting and fixing',q:R.kg,u:'kg',rk:'labSteel',ru:'per kg',amt:R.kg*r('labSteel'),qf:x=>Math.round(x).toLocaleString('en-US')}];
+  const base=items.reduce((s,i)=>s+i.amt,0),extras=[['water','Water charges'],['tools','Tools and plant'],['sundry','Sundries'],['profit',"Contractor's profit and overheads"]].map(([k,l])=>({k,l,amt:base*p(k)}));
+  const sub=base+extras.reduce((s,e)=>s+e.amt,0),cont=sub*p('cont');return{items,base,extras,sub,cont,total:sub+cont};
+}
+const RCK={wall:{id:'rcw',title:'RCC wall'},slab:{id:'rcs',title:'RCC slab'}};
+const barOpts=cur=>optHTML(Object.keys(BARS).map(b=>[b,BAR_LBL[b]]),cur);
+function rcSetupHTML(kind){const S=RC[kind],imp=S.units==='imp';
+  return `${segHTML('rcU',[['imp','Feet-inches'],['met','Metric']],S.units)}
+  <div class="sgrid">
+    <label class="full">Concrete mix (cement : sand : crush)<select data-s="mix">${optHTML(CMIX.map(m=>[m,m+({'1:1.5:3':' · M20 (columns, beams, slabs)','1:2:4':' · M15 (slabs, walls)','1:3:6':' · M10 (PCC)','1:4:8':' · M7.5 (lean, bedding)'})[m]]),S.mix)}</select></label>
+    <label>Standard bar length <span class="uh">${imp?'ft':'m'}</span><input class="ti" type="text" inputmode="decimal" data-s="stock" value="${esc(S.stock)}"></label>
+    <label>Lap length <span class="uh">× bar dia</span><input class="ti" type="text" inputmode="decimal" data-s="lapD" value="${esc(S.lapD)}"></label>
+    <label>Cover <span class="uh">${imp?'in':'mm'}</span><input class="ti" type="text" inputmode="decimal" data-s="cover" value="${esc(S.cover)}"></label>
+  </div>
+  <details class="assume"><summary>Assumptions you can change</summary><div class="sgrid">
+    <label>Dry volume factor<input class="ti" type="text" inputmode="decimal" data-s="dry" value="${esc(S.dry)}"></label>
+    <label>Concrete wastage <span class="uh">%</span><input class="ti" type="text" inputmode="decimal" data-s="cw" value="${esc(S.cw)}"></label>
+    <label>Water–cement ratio<input class="ti" type="text" inputmode="decimal" data-s="wc" value="${esc(S.wc)}"></label>
+    <label>Steel wastage <span class="uh">%</span><input class="ti" type="text" inputmode="decimal" data-s="sw" value="${esc(S.sw)}"></label>
+    <label>Binding wire <span class="uh">kg per ton</span><input class="ti" type="text" inputmode="decimal" data-s="wire" value="${esc(S.wire)}"></label>
+  </div><p class="hint">Wet concrete shrinks as cement and sand fill the gaps between the crush, so the dry materials are 1.54 × the wet volume. One 50 kg cement bag = 0.0347 m³. Steel weight = d² ÷ 162.2 kg per metre. Every bar run longer than one standard bar gets a lap of ${esc(S.lapD)} × the bar diameter.</p></details>`}
+function rcItemsHTML(kind){const S=RC[kind],imp=S.units==='imp',LH=imp?'ft in':'m',SH=imp?'in':'mm',im=imp?'text':'decimal';
+  return S.items.map((it,i)=>{
+    const head=`<div class="whead"><input class="ti wname" data-w="${i}" data-f="name" value="${esc(it.name)}" aria-label="Name"><label class="wx">Same ×<input class="ti" type="text" inputmode="decimal" data-w="${i}" data-f="n" value="${esc(it.n)}"></label></div>`;
+    const foot=`<div class="row" style="gap:6px">${kind==='wall'?`<button class="op" data-addopen="${i}">+ Opening</button>`:`<button class="op" data-addpart="${i}">+ Part</button>`}<button class="op" data-dup="${i}">Copy</button><button class="op" data-del="${i}">Remove</button></div><div class="wout" id="${RCK[kind].id}-out-${i}"></div>`;
+    if(kind==='wall')return `<div class="wcard">${head}
+      <div class="sgrid">
+        <label>Length <span class="uh">${LH}</span><input class="ti" type="text" inputmode="${im}" data-w="${i}" data-f="L" value="${esc(it.L)}" placeholder="${imp?'20 6':'6.25'}"></label>
+        <label>Height <span class="uh">${LH}</span><input class="ti" type="text" inputmode="${im}" data-w="${i}" data-f="H" value="${esc(it.H)}" placeholder="${imp?'10':'3.05'}"></label>
+        <label>Thickness <span class="uh">${SH}</span><input class="ti" type="text" inputmode="decimal" data-w="${i}" data-f="t" value="${esc(it.t)}"></label>
+        <label>Steel layers<select data-w="${i}" data-f="layers">${optHTML([['1','1 (single mesh)'],['2','2 (both faces)']],it.layers)}</select></label>
+        <label>Vertical bars<select data-w="${i}" data-f="vb">${barOpts(it.vb)}</select></label>
+        <label>Vertical spacing <span class="uh">${SH}</span><input class="ti" type="text" inputmode="decimal" data-w="${i}" data-f="vs" value="${esc(it.vs)}"></label>
+        <label>Horizontal bars<select data-w="${i}" data-f="hb">${barOpts(it.hb)}</select></label>
+        <label>Horizontal spacing <span class="uh">${SH}</span><input class="ti" type="text" inputmode="decimal" data-w="${i}" data-f="hs" value="${esc(it.hs)}"></label>
+        <label class="full">Starter bars from foundation<select data-w="${i}" data-f="starter">${optHTML([['1','Yes · add one lap to each vertical bar'],['0','No']],it.starter)}</select></label>
+      </div>
+      <div class="ohead"><b>Openings</b><span class="hint">doors, windows, ducts</span></div>
+      ${it.open.length?`<div class="otbl"><span class="hint">Name</span><span class="hint">Width</span><span class="hint">Height</span><span class="hint">How many</span><span></span>${it.open.map((o,k)=>`<input class="ti" data-w="${i}" data-o="${k}" data-f="name" value="${esc(o.name)}" aria-label="Opening name"><input class="ti" type="text" inputmode="${im}" data-w="${i}" data-o="${k}" data-f="w" value="${esc(o.w)}" aria-label="Width"><input class="ti" type="text" inputmode="${im}" data-w="${i}" data-o="${k}" data-f="h" value="${esc(o.h)}" aria-label="Height"><input class="ti" type="text" inputmode="decimal" data-w="${i}" data-o="${k}" data-f="n" value="${esc(o.n)}" aria-label="How many"><button class="xbtn" data-delopen="${i}-${k}" aria-label="Remove opening">×</button>`).join('')}</div>`:''}
+      ${foot}</div>`;
+    return `<div class="wcard">${head}
+      <div class="ohead"><b>Shape</b><span class="hint">add rectangles for L or U shapes; use − for cut-outs and shafts</span></div>
+      <div class="ptbl"><span class="hint">Part</span><span class="hint">+ / −</span><span class="hint">Length / dia</span><span class="hint">Width / height</span><span></span>
+      ${it.parts.map((p,k)=>`<select data-w="${i}" data-p="${k}" data-f="k" aria-label="Part shape">${optHTML([['rect','▭ Rect'],['tri','△ Tri'],['circle','○ Circle']],p.k)}</select><select data-w="${i}" data-p="${k}" data-f="sg" aria-label="Add or cut out">${optHTML([['+','+'],['−','−']],p.sg)}</select><input class="ti" type="text" inputmode="${im}" data-w="${i}" data-p="${k}" data-f="a" value="${esc(p.a)}" placeholder="${p.k==='circle'?'dia':'length'}" aria-label="Length or diameter"><input class="ti" type="text" inputmode="${im}" data-w="${i}" data-p="${k}" data-f="b" value="${esc(p.b)}" placeholder="${p.k==='tri'?'height':'width'}" ${p.k==='circle'?'disabled':''} aria-label="Width or height"><button class="xbtn" data-delpart="${i}-${k}" aria-label="Remove part">×</button>`).join('')}</div>
+      <div class="sgrid">
+        <label>Thickness <span class="uh">${SH}</span><input class="ti" type="text" inputmode="decimal" data-w="${i}" data-f="t" value="${esc(it.t)}"></label>
+        <label>Top mesh<select data-w="${i}" data-f="top">${optHTML([['0','No · bottom mesh only'],['1','Yes · same as bottom']],it.top)}</select></label>
+        <label>Main bars (along length)<select data-w="${i}" data-f="xb">${barOpts(it.xb)}</select></label>
+        <label>Main spacing <span class="uh">${SH}</span><input class="ti" type="text" inputmode="decimal" data-w="${i}" data-f="xs" value="${esc(it.xs)}"></label>
+        <label>Cross bars (along width)<select data-w="${i}" data-f="yb">${barOpts(it.yb)}</select></label>
+        <label>Cross spacing <span class="uh">${SH}</span><input class="ti" type="text" inputmode="decimal" data-w="${i}" data-f="ys" value="${esc(it.ys)}"></label>
+      </div>${foot}</div>`}).join('')}
+function rcPaint(kind){const id=RCK[kind].id;$('#'+id+'-setup').innerHTML=rcSetupHTML(kind);$('#'+id+'-items').innerHTML=rcItemsHTML(kind);rcRecalc(kind)}
+const rcLast={};
+function rcRecalc(kind){
+  const id=RCK[kind].id,S=RC[kind],imp=S.units==='imp',sum=$('#'+id+'-sum'),bq=$('#'+id+'-boq');let R;
+  try{R=rcCalc(kind)}catch(e){sum.innerHTML=`<p class="hint" style="color:var(--bad)">${esc(e.message)}</p>`;bq.innerHTML='';return}
+  R.items.forEach(w=>{const el=$(`#${id}-out-${w.i}`);if(!el)return;const it=S.items[w.i];
+    if(!w.ok){const started=kind==='wall'?(it.L||it.H):it.parts.some(p=>p.a||p.b);el.innerHTML=`<span class="hint">${esc(started?w.err:kind==='wall'?'Enter length and height':'Enter the size of each part')}</span>`;return}
+    el.innerHTML=`<span>${volTxtU(w.conc,imp)} concrete</span><span>${q2(w.kg)} kg steel</span><span class="hint">${esc(w.detail)}</span>`});
+  if(!R.items.some(w=>w.ok)){sum.innerHTML=`<p class="hint">Enter the size of a ${kind} to see the quantities.</p>`;bq.innerHTML='';rcLast[kind]=null;return}
+  const vv=v=>imp?`${q2(v*FT3_PER_M3)} cft`:`${q2(v)} m³`,va=v=>imp?`${q2(v)} m³`:`${q2(v*FT3_PER_M3)} cft`,lenU=l=>imp?`${q2(l/0.3048)} ft`:`${q2(l)} m`;
+  sum.innerHTML=`<div class="kv">
+    ${kv('Concrete (wet)',`${vv(R.V)}<br><small class="hint">${va(R.V)} · +${esc(S.cw)}% wastage = ${vv(R.Vw)}</small>`,null)}
+    ${kv('Dry materials',`${vv(R.dry)}<br><small class="hint">wet × ${esc(S.dry)}</small>`,null)}
+    ${kv('Cement',`${q2(R.bags)} bags<br><small class="hint">${q2(R.cementKg)} kg</small>`,null)}
+    ${kv('Sand',`${vv(R.sand)}<br><small class="hint">${va(R.sand)}</small>`,null)}
+    ${kv('Crush',`${vv(R.crush)}<br><small class="hint">${va(R.crush)}</small>`,null)}
+    ${kv('Water',`${q2(R.water)} litres`,null)}
+    ${kv('Steel',`${Math.round(R.kg).toLocaleString('en-US')} kg<br><small class="hint">${q2(R.tons)} tons · with ${esc(S.sw)}% wastage</small>`,null)}
+    ${kv('Binding wire',`${q2(R.wire)} kg`,null)}
+    ${kv('Shuttering',imp?`${q2(R.shut*FT2_PER_M2)} ft²`:`${q2(R.shut)} m²`,null)}
+  </div>
+  <table class="boq"><thead><tr><th>Bar</th><th>Total length</th><th>${imp?esc(S.stock)+' ft':esc(S.stock)+' m'} bars</th><th>Weight</th></tr></thead><tbody>
+  ${R.bars.map(b=>`<tr><td>${esc(BAR_LBL[b.b])}</td><td>${lenU(b.len)}</td><td>${b.stockBars}</td><td>${Math.round(b.kg).toLocaleString('en-US')} kg<small>${q2(b.kg/1000)} t</small></td></tr>`).join('')}
+  <tr class="gt"><td colspan="3">Total steel</td><td>${Math.round(R.kg).toLocaleString('en-US')} kg<small>${q2(R.tons)} tons</small></td></tr></tbody></table>
+  <p class="hint">Lengths include laps (${esc(S.lapD)} × bar dia) wherever a run is longer than one ${imp?esc(S.stock)+' ft':esc(S.stock)+' m'} bar${kind==='wall'?', the starter-bar lap, and openings taken out':''}. Hooks and bends are not included; add them through the wastage %.</p>`;
+  let B;try{B=rcBOQ(kind,R)}catch(e){bq.innerHTML=`<p class="hint" style="color:var(--bad)">${esc(e.message)}</p>`;return}
+  const per=imp?B.total/(R.V*FT3_PER_M3):B.total/R.V;
+  bq.innerHTML=`<div class="tscroll" style="max-height:none"><table class="boq"><thead><tr><th>#</th><th>Item</th><th>Qty</th><th>Rate (Rs)</th><th>Amount</th></tr></thead><tbody>
+    ${B.items.map((it,k)=>`<tr><td>${k+1}</td><td>${esc(it.d)}</td><td>${it.qf(it.q)} <small>${it.u}</small></td><td><input class="ti rate" type="text" inputmode="decimal" data-r="${it.rk}" value="${esc(RC.rates[it.rk])}" aria-label="Rate ${esc(it.ru)}"><small>${it.ru}</small></td><td>${money(it.amt)}</td></tr>`).join('')}
+    <tr class="st"><td></td><td colspan="3">Cost of materials and labour</td><td>${money(B.base)}</td></tr>
+    ${B.extras.map(e=>`<tr><td></td><td colspan="2">${esc(e.l)}</td><td><input class="ti rate" type="text" inputmode="decimal" data-p="${e.k}" value="${esc(RC.pct[e.k])}" aria-label="${esc(e.l)} percent"><small>%</small></td><td>${money(e.amt)}</td></tr>`).join('')}
+    <tr><td></td><td colspan="2">Contingency</td><td><input class="ti rate" type="text" inputmode="decimal" data-p="cont" value="${esc(RC.pct.cont)}" aria-label="Contingency percent"><small>%</small></td><td>${money(B.cont)}</td></tr>
+    <tr class="gt"><td></td><td colspan="3">Total estimate</td><td>${money(B.total)}</td></tr></tbody></table></div>
+  <p class="hint">That is ${money(per)} ${imp?'per cft':'per m³'} of concrete including steel. Rates are shared by the wall and slab screens.</p>`;
+  rcLast[kind]={R,B};
+}
+const volTxtU=(v,imp)=>imp?`${q2(v*FT3_PER_M3)} cft`:`${q2(v)} m³`;
+function rcText(kind){const L=rcLast[kind];if(!L)return '';const{R,B}=L,S=RC[kind],imp=S.units==='imp';
+  const vv=v=>imp?`${q2(v*FT3_PER_M3)} cft`:`${q2(v)} m³`;
+  return [`RCC ${kind.toUpperCase()} ESTIMATE (Hisab Calculator)`,`Mix ${S.mix}, dry factor ${S.dry}, lap ${S.lapD}d, bar length ${S.stock} ${imp?'ft':'m'}`,'',
+    ...S.items.map((it,i)=>{const r=R.items[i];return r.ok?`${it.name} ×${it.n}: ${vv(r.conc)} concrete, ${q2(r.kg)} kg steel`:`${it.name}: ${r.err}`}),'',
+    'QUANTITIES',`Concrete: ${vv(R.V)} wet (${vv(R.Vw)} with wastage), dry ${vv(R.dry)}`,`Cement: ${q2(R.bags)} bags (${q2(R.cementKg)} kg)`,`Sand: ${vv(R.sand)}`,`Crush: ${vv(R.crush)}`,`Water: ${q2(R.water)} litres`,
+    ...R.bars.map(b=>`Steel ${b.b}: ${imp?q2(b.len/0.3048)+' ft':q2(b.len)+' m'}, ${b.stockBars} bars, ${Math.round(b.kg)} kg`),`Steel total: ${Math.round(R.kg)} kg = ${q2(R.tons)} tons`,`Binding wire: ${q2(R.wire)} kg`,'',
+    'BILL OF QUANTITIES',...B.items.map((it,k)=>`${k+1}. ${it.d}: ${it.qf(it.q)} ${it.u} @ Rs ${RC.rates[it.rk]} ${it.ru} = ${money(it.amt)}`),
+    `Cost of materials and labour: ${money(B.base)}`,...B.extras.map(e=>`${e.l} ${RC.pct[e.k]}%: ${money(e.amt)}`),`Contingency ${RC.pct.cont}%: ${money(B.cont)}`,`TOTAL: ${money(B.total)}`].join('\n')}
+function rcConvert(kind,to){const S=RC[kind],from=S.units;if(from===to)return;
+  const L=s=>{if(String(s).trim()==='')return s;try{const m=rcLen(s,'',from);return to==='imp'?revit(m/0.0254,16):String(+m.toFixed(3))}catch(e){return s}};
+  const Sm=s=>{if(String(s).trim()==='')return s;try{const v=rcNum(s,'');return to==='imp'?String(+(v/25.4).toFixed(2)):String(Math.round(v*25.4))}catch(e){return s}};
+  S.items.forEach(it=>{if(kind==='wall'){it.L=L(it.L);it.H=L(it.H);it.open.forEach(o=>{o.w=L(o.w);o.h=L(o.h)});['t','vs','hs'].forEach(k=>it[k]=Sm(it[k]))}
+    else{it.parts.forEach(p=>{p.a=L(p.a);p.b=L(p.b)});['t','xs','ys'].forEach(k=>it[k]=Sm(it[k]))}});
+  S.cover=Sm(S.cover);S.stock=to==='imp'?'40':'12';S.units=to}
+['wall','slab'].forEach(kind=>{
+  const id=RCK[kind].id,sec=$('#'+id);let armed=false;
+  sec.addEventListener('input',e=>{const t=e.target,d=t.dataset,S=RC[kind];
+    if(d.w!=null&&d.f){const it=S.items[+d.w];if(d.o!=null)it.open[+d.o][d.f]=t.value;else if(d.p!=null)it.parts[+d.p][d.f]=t.value;else it[d.f]=t.value;
+      if(t.tagName==='SELECT'&&d.p!=null){saveRC();$('#'+id+'-items').innerHTML=rcItemsHTML(kind)}}
+    else if(d.s){S[d.s]=t.value;if(t.tagName==='SELECT'){saveRC();rcPaint(kind);return}}
+    else if(d.r){RC.rates[d.r]=t.value}else if(d.p){RC.pct[d.p]=t.value}else return;
+    saveRC();rcRecalc(kind)});
+  sec.addEventListener('click',e=>{const t=e.target,S=RC[kind];let x;
+    if((x=t.closest('[data-set="rcU"]'))){rcConvert(kind,x.dataset.v);saveRC();rcPaint(kind);return}
+    if((x=t.closest('[data-additem]'))){S.items.push(kind==='wall'?newRcWall(S.items.length+1):newRcSlab(S.items.length+1));saveRC();rcPaint(kind);return}
+    if((x=t.closest('[data-dup]'))){const c=JSON.parse(JSON.stringify(S.items[+x.dataset.dup]));c.name+=' (copy)';S.items.splice(+x.dataset.dup+1,0,c);saveRC();rcPaint(kind);return}
+    if((x=t.closest('[data-del]'))){S.items.splice(+x.dataset.del,1);if(!S.items.length)S.items.push(kind==='wall'?newRcWall(1):newRcSlab(1));saveRC();rcPaint(kind);return}
+    if((x=t.closest('[data-addopen]'))){S.items[+x.dataset.addopen].open.push({name:'Door',w:'',h:'',n:'1'});saveRC();rcPaint(kind);return}
+    if((x=t.closest('[data-delopen]'))){const[a,k]=x.dataset.delopen.split('-').map(Number);S.items[a].open.splice(k,1);saveRC();rcPaint(kind);return}
+    if((x=t.closest('[data-addpart]'))){S.items[+x.dataset.addpart].parts.push({k:'rect',sg:'+',a:'',b:''});saveRC();rcPaint(kind);return}
+    if((x=t.closest('[data-delpart]'))){const[a,k]=x.dataset.delpart.split('-').map(Number);const it=S.items[a];it.parts.splice(k,1);if(!it.parts.length)it.parts.push({k:'rect',sg:'+',a:'',b:''});saveRC();rcPaint(kind);return}
+    if(t.closest('[data-copyboq]')){const s=rcText(kind);if(!s){toast('Enter a '+kind+' first');return}
+      if(navigator.clipboard)navigator.clipboard.writeText(s).then(()=>toast('Copied. Paste it into WhatsApp, notes or Excel.'),()=>toast('Copying is blocked here'));else toast('Copying is blocked here');return}
+    if((x=t.closest('[data-new]'))){if(!armed){armed=true;x.textContent='Tap again to clear all';setTimeout(()=>{armed=false;x.textContent='Start a new estimate'},3000);return}
+      armed=false;x.textContent='Start a new estimate';S.items=[kind==='wall'?newRcWall(1):newRcSlab(1)];saveRC();rcPaint(kind);toast('New estimate started. Settings and rates are kept.')}});
+  rcPaint(kind);
+});
 
 /* ---------- boot ---------- */
 
